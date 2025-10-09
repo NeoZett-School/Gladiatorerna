@@ -1,0 +1,48 @@
+Gladiatorn
+
+1. Arena för fight
+2. Strid med olika varelser, fleara rundor?
+3. Affär (Vapen + rustningar + skjöld [temporär rustning] + poäng)
+4. Nivåer (Erfarenhet?)
+
+- Inställningar som svårighetsgrad (I början?)
+- Meny (b.la Inställningar för spelet och spelets gång, t.ex blod?)
+- Olika spel figurer (Man / kvinna?) (Olika specialiteter)
+- Stjäla vapen från motståndare
+- Djur, som tiger, varg eller björn
+- Publikröstning? Kejsare?
+- Oavgjord kamp
+- Kan gladiatorn ge upp?
+
+Poängtyper:
+
+Hälsa,
+Attack, (bonus?)
+Kritikal attack,
+Kritikal attack chans,
+Skydd (skjöld med antal träffar),
+Affärs poäng,
+Erfarenhet -> Nivåer + Poäng + Presenter
+
+Träffchans? (Nej, men tack ändå)
+
+Detaljer:
+
+System baserat (Konsol),
+Spel del är separat.
+
+Position på arenan?
+Avstånds attacker?
+
+Årstid? Tid i verkligheten kan påverka hur spelat syns!
+
+Delar:
+
+System,
+Council,
+Enemy,
+Player,
+Game
+
+EventHandler,
+Section,  (-s)
