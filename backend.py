@@ -1,8 +1,9 @@
 # What we can't see on screen
 
-from typing import List, Dict, Any, Self
+from typing import List, Dict, Optional, Any, Self
 from enum import Enum, auto
 from names import generate_name
+from story import generate_story
 import System
 import items
 import random
@@ -44,6 +45,13 @@ class Difficulty(Enum): # enums allow setting a state
     @property
     def data(self) -> Dict[str, Any]: # We can get the corresponding data
         return CONFIG.difficulty_data.get(self.name, {})
+    
+    @classmethod
+    def get(cls, name: str) -> Optional["Difficulty"]:
+        if not isinstance(name, str):
+            return None
+        name = name.capitalize()  # normalize input like "easy" -> "Easy"
+        return cls.__members__.get(name)
 
 class Player(System.Handler): # We inherit the handler to create a player
     def __init__(self, name: str) -> Self:
@@ -69,6 +77,7 @@ class Environment:
     # Anything, really.
     def __init__(self, enemy: Enemy) -> Self:
         self.enemy: Enemy = enemy
+        self.story: str = generate_story()
 
 class Section(System.Handler):
     handlers: List[System.Handler]
@@ -78,6 +87,9 @@ class Section(System.Handler):
         for handler in self.handlers:
             handler._system = self.system
             handler.init()
+    @property
+    def system(self) -> "Game": # We want the correct typing
+        return super().system
     def on_update(self) -> None:
         for handler in self.handlers:
             handler.on_update()
@@ -92,7 +104,7 @@ class SectionManager:
     # The difference is that this class dynamically handles sections, 
     # whilst the library only statically stores them.
 
-    sections: Dict[str, Section]
+    sections: Dict[str, Section] = {}
 
     @classmethod
     def load_section(cls, name: str, section: Section) -> None: 
@@ -109,6 +121,8 @@ class Game(System.System):
     # We'll build the actual game mechanics here
     def __init__(self) -> Self:
         super().__init__()
+
+        self.difficulty: Difficulty = Difficulty.Normal
     
     def update(self) -> None:
         super().update()

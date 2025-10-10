@@ -142,7 +142,7 @@ class ItemProtocol(Protocol):
 class Handler(Protocol):
     """A handler will handle any update or rendering."""
     @property
-    def system(self) -> None:
+    def system(self) -> "System":
         ...
     def init(self) -> None:
         ...

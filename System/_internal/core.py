@@ -163,7 +163,7 @@ class ItemProtocol(Protocol):
 
 class Handler(Protocol):
     @property
-    def system(self) -> None:
+    def system(self) -> "System":
         return self._system # If not defined, it will raise an error.
     
     def init(self) -> None: # When initializing this handler
