@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import List, Dict, Any
 from enum import Enum, auto
 import System
 import random
@@ -23,7 +23,7 @@ class Difficulty(Enum): # enums allow setting a state
     def data(self) -> Dict[str, Any]: # We can get the corresponding data
         return CONFIG.difficulty_data.get(self.name, {})
 
-class Player(System.Handler): # We inherit the player
+class Player(System.Handler): # We inherit the handler to create a player
     def __init__(self, name: str):
         super().__init__()
         self.player: System.Player = System.Player({
@@ -36,7 +36,7 @@ class Player(System.Handler): # We inherit the player
             "critical_factor": 1.0
         })
 
-class Enemy(System.Handler):
+class Enemy(System.Handler): # The full enemy implementation.
     def __init__(self, name: str, level: int):
         super().__init__()
         self.enemy: System.Enemy = System.Enemy({
@@ -48,16 +48,36 @@ class Enemy(System.Handler):
             )
         })
 
+class Section(System.Handler):
+    handlers: List[System.Handler]
+    def __init__(self):
+        self.handlers = []
+    def init(self) -> None: # Replicate the actual system
+        for handler in self.handlers:
+            handler._system = self.system
+            handler.init()
+    def on_update(self) -> None:
+        for handler in self.handlers:
+            handler.on_update()
+    def on_render(self) -> None:
+        for handler in self.handlers:
+            handler.on_render()
+    def tick(self) -> None:
+        ...
+
+class MenuSection(Section):
+    def tick(self):
+        ...
+
 class Game(System.System):
+    # We'll build the actual game mechanics here
     def __init__(self):
         super().__init__()
+        self.section: Section
     
     def update(self) -> None:
         super().update()
-
-        for handler in self.handlers:
-            if isinstance(handler, Player):
-                handler.player
+        ... # We'll expand here
     
     def render(self) -> None:
         super().render()

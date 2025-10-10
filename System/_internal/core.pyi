@@ -7,6 +7,7 @@
 
 from typing import Tuple, List, Optional, Protocol, runtime_checkable
 from .data import PlayerData, ItemData
+from .itemtypes import ItemType
 
 def clear_screen() -> None:
     """Clear the screen"""
@@ -41,8 +42,13 @@ class Player:
         """The player health."""
         ...
     @property
-    def protec(self) -> int:
-        """The protection the player wears."""
+    def max_health(self) -> int:
+        """The max health of this player."""
+        ...
+    @property
+    def healing(self) -> float:
+        """How fast this player heals."""
+        ...
     @property
     def base_attack(self) -> int:
         """The base attack of this player."""
@@ -56,10 +62,10 @@ class Player:
         """The critical damage factor."""
         ...
     @property
-    def damage(self) -> int:
+    def attack(self) -> int:
         """The total attack of the player."""
         ...
-    def attack(self, damage: int) -> bool:
+    def damage(self, damage: int) -> bool:
         """Attack the player."""
         ...
     
@@ -75,42 +81,58 @@ class Enemy(Player):
 class ItemProtocol(Protocol): 
     """Any item."""
 
+    itype: ItemType
     equipped: bool
 
     # This will contain whatever structure any item will have.
     # It will also provide default values, easing the item making...
-    def __init__(self, _data: Optional[ItemData] = None):
+    def __init__(self, itype: ItemType, _data: Optional[ItemData] = None):
+        """Initialize this item."""
         ...
     @property
     def name(self) -> str:
+        """The name of this item."""
         ...
     @property
     def desc(self) -> str:
+        """The description of this item."""
         ...
     @property
     def cost(self) -> int:
+        """The cost of this item."""
         ...
     @property
     def health(self) -> int:
+        """The health of this item"""
         ...
     @property
-    def protec(self) -> int:
+    def max_health(self) -> int:
+        """The max health of this item."""
         ...
     @property
     def repair_time(self) -> float:
+        """The time in seconds for it to repair."""
         ...
     @property
     def attack_range(self) -> Tuple[int, int]:
+        """The low and high damage of the item."""
         ...
     @property
     def critical_chance(self) -> float:
+        """The critical chance of this item."""
         ...
     @property
     def critical_damage(self) -> int:
+        """The critical damage of this item."""
         ...
-    def attack(self, damage: int) -> bool:
+    def damage(self, damage: int) -> bool:
+        """Damage this item."""
         ...
     def update(self) -> None:
+        """Update this item."""
+        ...
+    def use(self, other: Player) -> None:
+        """Use this item against another player."""
         ...
 
 class Handler(Protocol):
@@ -120,9 +142,13 @@ class Handler(Protocol):
     @property
     def system(self) -> None:
         ...
+    def init(self) -> None:
+        ...
     def on_update(self) -> None:
         ...
     def on_render(self) -> None:
+        ...
+    def tick(self) -> None:
         ...
 
 class System:

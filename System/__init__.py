@@ -1,7 +1,7 @@
 # We import from _internal and other global modules 
 # so that we can expose them to external sources
 
-from ._internal import Player, Enemy, ItemProtocol, Handler, System, PlayerData, ItemData
+from ._internal import Player, Enemy, ItemProtocol, Handler, System, PlayerData, ItemData, ItemType
 
 __all__ = (
     "Player",
@@ -11,5 +11,6 @@ __all__ = (
     "System",
     "PlayerData",
     "EnemyData",
-    "ItemData"
+    "ItemData",
+    "ItemType"
 )
