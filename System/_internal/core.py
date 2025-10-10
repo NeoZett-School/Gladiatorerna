@@ -1,6 +1,6 @@
 # Checkout the .pyi
 
-from typing import Tuple, List, Optional, Protocol, runtime_checkable
+from typing import Tuple, List, Optional, Self, Protocol, runtime_checkable
 from .data import PlayerData, ItemData
 from .itemtypes import ItemType
 import random
@@ -20,7 +20,7 @@ def clear_screen():
     os.system("cls")
 
 class Player:
-    def __init__(self, _data: Optional[PlayerData] = None) -> None:
+    def __init__(self, _data: Optional[PlayerData] = None) -> Self:
         self._data: PlayerData = _data or {}
         self._next_heal: float = time.monotonic()
         self.items: List[ItemProtocol] = []
@@ -96,9 +96,10 @@ class Enemy(Player):
 
 @runtime_checkable
 class ItemProtocol(Protocol): 
-    def __init__(self, itype: ItemType, _data: Optional[ItemData] = None):
+    def __init__(self, parent: Player, itype: ItemType, _data: Optional[ItemData] = None) -> Self:
         self._data: ItemData = _data or {}
         self._next_repair: float = time.monotonic()
+        self.parent: Player = parent
         self.itype: ItemType = itype
         self.equipped: bool = False
 
@@ -150,7 +151,7 @@ class ItemProtocol(Protocol):
             self._next_repair = current_time + self.repair_time
     
     def use(self, other: Player) -> None:
-        ...
+        other.damage(self.parent.attack)
 
 class Handler(Protocol):
     @property
@@ -172,7 +173,7 @@ class Handler(Protocol):
 class System:
     active: bool
     handlers: List[Handler]
-    def __init__(self):
+    def __init__(self) -> Self:
         self.active = False
         self.handlers = []
     

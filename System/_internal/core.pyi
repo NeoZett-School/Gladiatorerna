@@ -5,7 +5,7 @@
 # has. This improves runtime, structure and 
 # readability.
 
-from typing import Tuple, List, Optional, Protocol, runtime_checkable
+from typing import Tuple, List, Optional, Self, Protocol, runtime_checkable
 from .data import PlayerData, ItemData
 from .itemtypes import ItemType
 
@@ -17,7 +17,7 @@ class Player:
     items: List[ItemProtocol]
 
     """A player will play the game."""
-    def __init__(self, _data: Optional[PlayerData] = None) -> None:
+    def __init__(self, _data: Optional[PlayerData] = None) -> Self:
         ...
     @property 
     def name(self) -> str:
@@ -81,12 +81,13 @@ class Enemy(Player):
 class ItemProtocol(Protocol): 
     """Any item."""
 
+    parent: Player
     itype: ItemType
     equipped: bool
 
     # This will contain whatever structure any item will have.
     # It will also provide default values, easing the item making...
-    def __init__(self, itype: ItemType, _data: Optional[ItemData] = None):
+    def __init__(self, itype: ItemType, _data: Optional[ItemData] = None) -> Self:
         """Initialize this item."""
         ...
     @property
@@ -137,8 +138,6 @@ class ItemProtocol(Protocol):
 
 class Handler(Protocol):
     """A handler will handle any update or rendering."""
-    def __init__(self):
-        ...
     @property
     def system(self) -> None:
         ...
@@ -155,8 +154,11 @@ class System:
     """The Gladiator game system."""
     active: bool
     handlers: List[Handler]
-    def __init__(self):
+    def __init__(self) -> Self:
         """Create a new system"""
+        ...
+    def init(self) -> None: 
+        """Initialize all handlers."""
         ...
     def update(self) -> None:
         """Update the system."""

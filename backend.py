@@ -1,4 +1,6 @@
-from typing import List, Dict, Any
+# What we can't see on screen
+
+from typing import List, Dict, Any, Self
 from enum import Enum, auto
 import System
 import random
@@ -24,7 +26,7 @@ class Difficulty(Enum): # enums allow setting a state
         return CONFIG.difficulty_data.get(self.name, {})
 
 class Player(System.Handler): # We inherit the handler to create a player
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> Self:
         super().__init__()
         self.player: System.Player = System.Player({
             "name": name,
@@ -37,7 +39,7 @@ class Player(System.Handler): # We inherit the handler to create a player
         })
 
 class Enemy(System.Handler): # The full enemy implementation.
-    def __init__(self, name: str, level: int):
+    def __init__(self, name: str, level: int) -> Self:
         super().__init__()
         self.enemy: System.Enemy = System.Enemy({
             "name": name,
@@ -50,7 +52,7 @@ class Enemy(System.Handler): # The full enemy implementation.
 
 class Section(System.Handler):
     handlers: List[System.Handler]
-    def __init__(self):
+    def __init__(self) -> Self:
         self.handlers = []
     def init(self) -> None: # Replicate the actual system
         for handler in self.handlers:
@@ -65,19 +67,31 @@ class Section(System.Handler):
     def tick(self) -> None:
         ...
 
-class MenuSection(Section):
-    def tick(self):
-        ...
+class SectionManager: 
+    # This will load and handle initialization of different sections.
+    # The difference is that this class dynamically handles sections, 
+    # whilst the library only statically stores them.
+
+    sections: Dict[str, Section]
+
+    @classmethod
+    def load_section(cls, name: str, section: Section) -> None: 
+        # Load the section into the manager
+        cls.sections[name] = section
+    
+    @classmethod
+    def init_section(cls, game: "Game", name: str) -> None:
+        # Initialize the section into the game system
+        game.handlers = [cls.sections[name]]
+        game.init()
 
 class Game(System.System):
     # We'll build the actual game mechanics here
-    def __init__(self):
+    def __init__(self) -> Self:
         super().__init__()
-        self.section: Section
     
     def update(self) -> None:
         super().update()
-        ... # We'll expand here
     
     def render(self) -> None:
         super().render()
