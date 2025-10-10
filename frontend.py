@@ -174,8 +174,9 @@ class SectionLibrary:
         for name, section in cls.sections.items():
             backend.SectionManager.load_section(name, section)
 
-SectionLibrary.load()
+if __name__ == "__main__":
+    SectionLibrary.load()
 
-game = backend.Game()
-backend.SectionManager.init_section(game, "Menu")
-game.run()
+    game = backend.Game()
+    backend.SectionManager.init_section(game, "Menu")
+    game.run()
