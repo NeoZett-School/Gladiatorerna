@@ -6,13 +6,15 @@
 # readability.
 
 from typing import Tuple, List, Optional, Protocol, runtime_checkable
-from .data import PlayerData, EnemyData, ItemData
+from .data import PlayerData, ItemData
 
 def clear_screen() -> None:
     """Clear the screen"""
     ...
 
 class Player:
+    items: List[ItemProtocol]
+
     """A player will play the game."""
     def __init__(self, _data: Optional[PlayerData] = None) -> None:
         ...
@@ -39,6 +41,9 @@ class Player:
         """The player health."""
         ...
     @property
+    def protec(self) -> int:
+        """The protection the player wears."""
+    @property
     def base_attack(self) -> int:
         """The base attack of this player."""
         ...
@@ -50,27 +55,27 @@ class Player:
     def critical_factor(self) -> float:
         """The critical damage factor."""
         ...
+    @property
+    def damage(self) -> int:
+        """The total attack of the player."""
+        ...
+    def attack(self, damage: int) -> bool:
+        """Attack the player."""
+        ...
+    
+    def update(self) -> None:
+        """Update the player and all its items."""
+        ...
 
-class Enemy:
-    """The player will attack a given enemy."""
-    def __init__(self, _data: Optional[EnemyData] = None):
-        ...
-    @property
-    def name(self) -> str:
-        ...
-    @property
-    def health(self) -> int:
-        ...
-    @property
-    def level(self) -> int:
-        ...
-    @property
-    def attack_range(self) -> Tuple[int, int]:
-        ...
+class Enemy(Player):
+    """The enemy."""
+    ...
 
 @runtime_checkable # Runtime checkable ensures "isinstance(var, ItemProtocol)"
 class ItemProtocol(Protocol): 
     """Any item."""
+
+    equipped: bool
 
     # This will contain whatever structure any item will have.
     # It will also provide default values, easing the item making...
@@ -89,6 +94,9 @@ class ItemProtocol(Protocol):
     def health(self) -> int:
         ...
     @property
+    def protec(self) -> int:
+        ...
+    @property
     def repair_time(self) -> float:
         ...
     @property
@@ -99,6 +107,10 @@ class ItemProtocol(Protocol):
         ...
     @property
     def critical_damage(self) -> int:
+        ...
+    def attack(self, damage: int) -> bool:
+        ...
+    def update(self) -> None:
         ...
 
 class Handler(Protocol):

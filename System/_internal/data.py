@@ -12,15 +12,10 @@ class PlayerData(TypedDict):
     exp: float
     level: int
     health: int
+    max_health: int
     base_attack: int
     critical_chance: float
     critical_factor: float
-
-class EnemyData(TypedDict):
-    name: str
-    health: int
-    level: int
-    attack_range: Tuple[int, int]
 
 class ItemData(TypedDict):
     name: str
