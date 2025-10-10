@@ -5,7 +5,6 @@ from enum import Enum, auto
 from names import generate_name
 from story import generate_story
 import System
-import items
 import random
 
 class CONFIG: # We can configure this game here
@@ -128,8 +127,8 @@ class Game(System.System):
 
         self.difficulty: Difficulty = Difficulty.Normal
         self.char_name: str = "Jim" 
-        # We'll initialize the player when we start the game.
-        # We cannot go back to menu when the game is started.
+        self.player: Optional[Player] = None # Initalized later.
+        self.environment: Optional[Environment] = None
     
     def update(self) -> None:
         super().update()
