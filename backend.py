@@ -15,18 +15,22 @@ class CONFIG: # We can configure this game here
         # dependent on what difficulty it is. 
         # (Then we use the enum directly)
         "Easy": {
+            "desc": "The easiest. If you just want to try the experience.",
             "enemy_max_health_factor": 0.5
         },
         "Normal": {
+            "desc": "Normal. Use this to get some action!",
             "enemy_max_health_factor": 1.0
         },
         "Hard": {
+            "desc": "The challenge is to beat this!",
             "enemy_max_health_factor": 1.5
         }
     }
     characters: Dict[str, System.PlayerData] = {
         "Jim": { # The casual baddie
             "name": "Jim",
+            "desc": "The default male protagonist.",
             "exp": 0.0,
             "level": 1,
             "max_health": 100,
@@ -56,7 +60,7 @@ class Difficulty(Enum): # enums allow setting a state
 class Player(System.Handler): # We inherit the handler to create a player
     def __init__(self, name: str) -> Self:
         super().__init__()
-        self.player: System.Player = System.Player(CONFIG.characters[name])
+        self.player: System.Player = System.Player(CONFIG.characters[name.capitalize()])
 
 class Enemy(System.Handler): # The full enemy implementation.
     def __init__(self, name: str, level: int, difficulty: Difficulty) -> Self:
@@ -123,6 +127,9 @@ class Game(System.System):
         super().__init__()
 
         self.difficulty: Difficulty = Difficulty.Normal
+        self.char_name: str = "Jim" 
+        # We'll initialize the player when we start the game.
+        # We cannot go back to menu when the game is started.
     
     def update(self) -> None:
         super().update()

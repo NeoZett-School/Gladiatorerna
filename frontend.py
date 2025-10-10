@@ -19,7 +19,7 @@ class MenuSection(backend.Section):
             "3": (f"{colorama.Fore.RED}Exit{colorama.Fore.RESET}", "Exit")
         }
         for k, v in options.items():
-            print(f"{k}: {v[0]}")
+            print(f"{colorama.Fore.BLUE}{k}{colorama.Fore.RESET}: {v[0]}")
         solution = options.get(input("Select one option: ").lower().strip())
         if not solution: return
 
@@ -35,12 +35,40 @@ class SettingsSection(backend.Section):
         print("Options:")
         options = {
             # id, title, current value
-            "1": ("Difficulty", self.system.difficulty.name)
+            "1": ("Difficulty", self.system.difficulty.name),
+            "2": ("Character", self.system.char_name)
         }
+        print(f"{colorama.Fore.BLACK}0{colorama.Fore.RESET}: Go back")
         for k, v in options.items():
-            print(f"{k}: {v[0]} [{v[1]}]")
+            print(f"{colorama.Fore.BLUE}{k}{colorama.Fore.RESET}: {colorama.Fore.YELLOW}{v[0]}{colorama.Fore.RESET} [{colorama.Fore.MAGENTA}{v[1]}{colorama.Fore.RESET}]")
+        solution = input("Select one setting to change: ").lower().strip()
+        if solution == "0": 
+            backend.SectionManager.init_section(self.system, "Menu")
+            return
+        solution = options.get(solution)
+        if not solution: return
         print("")
-        # We are continuing here later
+        match solution[0]:
+            case "Difficulty":
+                print("Difficulties:")
+                for name, difficulty in backend.Difficulty.__members__.items():
+                    print(f"{colorama.Fore.MAGENTA}{name}{colorama.Fore.RESET} - {colorama.Fore.BLUE}{difficulty.data.get("desc", "No description available.")}{colorama.Fore.RESET}")
+                new_difficulty = None
+                while not new_difficulty:
+                    new_difficulty = backend.Difficulty.get(input("Select one difficulty: "))
+                    if not new_difficulty: print(f"{colorama.Fore.RED}Invalid{colorama.Fore.RESET}. Try again.")
+                self.system.difficulty = new_difficulty
+            case "Character":
+                print("Characters:")
+                for name, data in backend.CONFIG.characters.items():
+                    print(f"{colorama.Fore.MAGENTA}{name}{colorama.Fore.RESET} - {colorama.Fore.BLUE}{data.get("desc", "No description available.")}{colorama.Fore.RESET}")
+                new_character = None
+                while not new_character:
+                    new_character = input("Select one character: ")
+                    if not new_character in backend.CONFIG.characters: 
+                        print(f"{colorama.Fore.RED}Invalid{colorama.Fore.RESET}. Try again.")
+                        new_character = None
+                self.system.char_name = new_character
 
 class GameSection(backend.Section):
     def on_render(self) -> None:

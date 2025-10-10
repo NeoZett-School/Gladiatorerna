@@ -1,4 +1,4 @@
-from typing import Tuple, TypedDict
+from typing import Tuple, Optional, TypedDict
 
 __all__ = ( # You can only import these from this file!
     "PlayerData",
@@ -9,6 +9,7 @@ class PlayerData(TypedDict):
     # PlayerData will be a type that will serve as a dict,
     # but with predefined keys and value types.
     name: str
+    desc: Optional[str] # Optional
     exp: float
     level: int
     health: int
