@@ -43,7 +43,7 @@ class Player:
     
     @property
     def health(self) -> int:
-        return int(self._data.get("health", self.max_health)) + sum(i.health for i in self.items if i.equipped)
+        return int((self._data.get("health", self.max_health) + sum(i.health for i in self.items if i.equipped)) * (1 + self.level * 0.25))
     
     @property
     def max_health(self) -> int:
@@ -72,7 +72,8 @@ class Player:
             sum(i.critical_damage for i in self.items if random.uniform(0, 1) < i.critical_chance and i.equipped) * self.critical_factor 
             if random.uniform(0, 1) < self.critical_chance else 1
         )
-        return int(self.base_attack + weapon_damage * critical_factor)
+        level_factor = (1 + self.level * 0.25)
+        return int((self.base_attack + weapon_damage * critical_factor) * level_factor)
     
     def damage(self, damage: int) -> int:
         for item in self.items:
@@ -96,10 +97,10 @@ class Enemy(Player):
 
 @runtime_checkable
 class ItemProtocol(Protocol): 
-    def __init__(self, parent: Player, itype: ItemType, _data: Optional[ItemData] = None) -> Self:
+    def __init__(self, itype: ItemType, _data: Optional[ItemData] = None) -> Self:
         self._data: ItemData = _data or {}
         self._next_repair: float = time.monotonic()
-        self.parent: Player = parent
+        self.owner: Optional[Player] = None
         self.itype: ItemType = itype
         self.equipped: bool = False
 
@@ -152,6 +153,13 @@ class ItemProtocol(Protocol):
     
     def use(self, other: Player) -> None:
         other.damage(self.parent.attack)
+
+    def buy(self, player: Player) -> bool:
+        if player.points < self.cost:
+            return False
+        player._data["points"] = player.points - self.cost
+        player.items.append(self)
+        self.owner = player
 
 class Handler(Protocol):
     @property

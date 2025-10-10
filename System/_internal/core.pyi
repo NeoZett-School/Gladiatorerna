@@ -81,7 +81,7 @@ class Enemy(Player):
 class ItemProtocol(Protocol): 
     """Any item."""
 
-    parent: Player
+    owner: Optional[Player]
     itype: ItemType
     equipped: bool
 
@@ -134,6 +134,9 @@ class ItemProtocol(Protocol):
         ...
     def use(self, other: Player) -> None:
         """Use this item against another player."""
+        ...
+    def buy(self, player: Player) -> bool:
+        """Buy this item as the given player."""
         ...
 
 class Handler(Protocol):

@@ -2,7 +2,9 @@
 
 from typing import List, Dict, Any, Self
 from enum import Enum, auto
+from names import generate_name
 import System
+import items
 import random
 
 class CONFIG: # We can configure this game here
@@ -11,9 +13,27 @@ class CONFIG: # We can configure this game here
         # except for the other implementations that are 
         # dependent on what difficulty it is. 
         # (Then we use the enum directly)
-        "Easy": {},
-        "Normal": {},
-        "Hard": {}
+        "Easy": {
+            "enemy_max_health_factor": 0.5
+        },
+        "Normal": {
+            "enemy_max_health_factor": 1.0
+        },
+        "Hard": {
+            "enemy_max_health_factor": 1.5
+        }
+    }
+    characters: Dict[str, System.PlayerData] = {
+        "Jim": { # The casual baddie
+            "name": "Jim",
+            "exp": 0.0,
+            "level": 1,
+            "max_health": 100,
+            "healing": 1.0,
+            "base_attack": 10,
+            "critical_chance": 0.5,
+            "critical_factor": 1.0
+        }
     }
 
 class Difficulty(Enum): # enums allow setting a state
@@ -28,27 +48,27 @@ class Difficulty(Enum): # enums allow setting a state
 class Player(System.Handler): # We inherit the handler to create a player
     def __init__(self, name: str) -> Self:
         super().__init__()
-        self.player: System.Player = System.Player({
-            "name": name,
-            "exp": 0.0,
-            "level": 1,
-            "health": 100,
-            "base_attack": 10,
-            "critical_chance": 0.5,
-            "critical_factor": 1.0
-        })
+        self.player: System.Player = System.Player(CONFIG.characters[name])
 
 class Enemy(System.Handler): # The full enemy implementation.
-    def __init__(self, name: str, level: int) -> Self:
+    def __init__(self, name: str, level: int, difficulty: Difficulty) -> Self:
         super().__init__()
         self.enemy: System.Enemy = System.Enemy({
             "name": name,
-            "health": random.randint(100 * level * 2, 100 * level * 2.15 + 50),
             "level": level,
-            "attack_range": (
-                random.randint(10 * level, 20 * level)
-            )
+            "max_health": 100 * (1 + level * 0.25) * difficulty.data.get("enemy_max_health_factor" ,1.0)
         })
+
+    @classmethod
+    def generate_enemy(cls, min_level: int, max_level: int, difficulty: Difficulty) -> Self:
+        return cls(generate_name(), random.randint(min_level, max_level), difficulty)
+
+class Environment:
+    # Here, we define the environment.
+    # f.e backstory, enemy, shop. 
+    # Anything, really.
+    def __init__(self, enemy: Enemy) -> Self:
+        self.enemy: Enemy = enemy
 
 class Section(System.Handler):
     handlers: List[System.Handler]
