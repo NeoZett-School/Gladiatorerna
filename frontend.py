@@ -6,6 +6,7 @@ print("Loading...", end="\r")
 from typing import Tuple, List, Dict, Optional, Any
 from items import ItemLibrary
 import backend
+import random
 
 if not __name__ == "__main__":
     exit()
@@ -22,7 +23,7 @@ class MenuSection(backend.Section):
                   f" your character in the {colorama.Fore.CYAN}Settings{colorama.Fore.RESET}.")
             print(f"The {colorama.Fore.MAGENTA}Shop{colorama.Fore.RESET} and {colorama.Fore.CYAN}Inventory{colorama.Fore.RESET}"
                   " will be unlocked once you've started the game and your character ")
-            print("has been chosen. After you have started, go back and buy your initial gear for the fight.")
+            print("has been chosen. Once you have started, you can go back and buy new gear.")
             print("To do this, open the store. Then, you can go back into the battlefield, selecting"
                   f" {colorama.Fore.GREEN}Start{colorama.Fore.RESET}.")
         print()
@@ -75,6 +76,8 @@ class SettingsSection(backend.Section):
                 print("Difficulties:")
                 for name, difficulty in backend.Difficulty.__members__.items():
                     print(f"{colorama.Fore.MAGENTA}{name}{colorama.Fore.RESET} - {colorama.Fore.BLUE}{difficulty.data.get("desc", "No description available.")}{colorama.Fore.RESET}")
+                if self.system.player:
+                    print("[The new difficulty only apply once a new battle begins]")
                 new_difficulty = None
                 while not new_difficulty:
                     new_difficulty = backend.Difficulty.get(input("Select one difficulty: "))
@@ -292,14 +295,17 @@ class IntelSection(backend.Section):
         if self.system.player:
             player = self.system.player.sys
             print(f"-- {colorama.Fore.YELLOW}{player.name}{colorama.Fore.RESET} --")
+            exp_have = max(int(player.exp*10), 0)
+            exp_need = 10 - exp_have
             items = {
                 # Title, value
                 "Points": f"{int(player.points)}p",
                 "Level": f"{player.level}",
-                "Exp": f"{player.exp}",
+                "Exp": f"{colorama.Fore.YELLOW}{"-"*exp_have}{colorama.Fore.BLUE}{"-"*exp_need}{colorama.Fore.RESET} ({int(player.exp*100)}%)",
                 "Max Health": f"{player.max_health}",
                 "Healing": f"{player.healing} seconds/hp",
                 "Base Attack": f"{player.base_attack}",
+                "Protection": f"{int(sum(i.max_health for i in player.items if i.equipped and i.itype == backend.System.ItemType.SHIELD))}",
                 "Critical Chance": f"{player.critical_chance}",
                 "Critical Factor": f"{player.critical_factor}"
             }
@@ -314,17 +320,59 @@ class IntelSection(backend.Section):
             backend.SectionManager.init_section(self.system, "Menu")
             return
 
+class BlacksmithSection(backend.Section):
+    ...
+
 class GameSection(backend.Section):
     class Directory(backend.Section):
         title: str
         rewards: Dict[str, Any]
+        loss: bool = False
         def on_render(self) -> None:
             super().on_render()
             print(self.title)
-            for reward, amount in self.rewards:
-                print(f"{colorama.Fore.YELLOW}{reward}{colorama.Fore.RESET} {colorama.Fore.GREEN + colorama.Style.BRIGHT}+{amount}{colorama.Fore.RESET + colorama.Style.RESET_ALL}")
-            
+            for reward, amount in self.rewards.items():
+                player = self.system.player.sys
+                amount = amount if not self.loss else -amount * 0.25
+                match reward:
+                    case "points":
+                        player._data["points"] = player.points + amount
+                    case "exp":
+                        new_exp = player.exp + amount
+                        while new_exp >= 1.0:
+                            player._data["level"] = player.level + 1
+                            new_exp -= 1.0
+                        player._data["exp"] = new_exp
+                    
+                if not self.loss:
+                    print(f"{colorama.Fore.YELLOW}{reward}{colorama.Fore.RESET} {colorama.Fore.GREEN + colorama.Style.BRIGHT}+{amount}{colorama.Fore.RESET + colorama.Style.RESET_ALL}")
+                else:print(f"{colorama.Fore.YELLOW}{reward}{colorama.Fore.RESET} {colorama.Fore.RED + colorama.Style.BRIGHT}-{abs(amount)}{colorama.Fore.RESET + colorama.Style.RESET_ALL}")
+            print()
+            options = {
+                # id, title, code
+                "1": (f"{colorama.Fore.GREEN + colorama.Style.BRIGHT}Yes{colorama.Fore.RESET + colorama.Style.RESET_ALL}", "Y"),
+                "2": (f"{colorama.Fore.RED + colorama.Style.BRIGHT}No{colorama.Fore.RESET + colorama.Style.RESET_ALL}", "N")
+            }
             print("Do you want to continue")
+            for k, v in options.items():
+                print(f"{colorama.Fore.BLUE}{k}{colorama.Fore.RESET}: {v[0]}")
+            solution = options.get(input("Select one option: ").lower().strip())
+            if not solution: return
+            difficulty = self.system.difficulty
+            self.system.environment = backend.Environment( # New environment time!
+                self.system.player, 
+                backend.Enemy.generate_enemy(
+                    self.system.player,
+                    difficulty
+                ),
+                difficulty
+            )
+            player = self.system.player.sys
+            player._data["health"] = player._data["max_health"]
+            if solution[1] == "N":
+                backend.SectionManager.init_section(self.system, "Menu")
+                return
+            backend.SectionManager.init_section(self.system, "Game")
 
     class Success(Directory):
         title = f"{colorama.Fore.GREEN}Success! You won rewards: {colorama.Fore.RESET}"
@@ -334,16 +382,23 @@ class GameSection(backend.Section):
     
     class Loss(backend.Section):
         title = f"{colorama.Fore.RED}Oh no! You lost rewards: {colorama.Fore.RESET}"
+        loss = True
         def init(self) -> None:
             super().init()
             self.rewards = self.system.environment.rewards
 
     def init(self) -> None:
-        super().init()
         if not self.system.player: 
             # Some options are unchangeable after starting the game, like the character. 
             # Whilst some are only initialy created once.
+
+            # Setup the player
             self.system.player = backend.Player(self.system.char_name)
+            player = self.system.player.sys
+            ItemLibrary.weapons["Wooden Sword"].buy(player)
+            ItemLibrary.armor["Wooden Armor"].buy(player)
+
+            # Load the initial environment
             difficulty = self.system.difficulty
             self.system.environment = backend.Environment(
                 self.system.player, 
@@ -354,22 +409,29 @@ class GameSection(backend.Section):
                 difficulty
             )
             self.handlers = [self.system.player]
+        super().init()
+
+        self.log: Optional[List[str]] = None
+        self.enemy_attack: str = self.system.environment.enemy.generate_attack()
     
     def on_update(self) -> None:
         super().on_update()
-        # Here, we will handle moving on througout the game, and also enemies damage
-        # We'll also update the current enemy here
         self.system.environment.enemy.on_update()
 
     def on_render(self) -> None:
         super().on_render()
         print(f"---- {{{colorama.Fore.CYAN + colorama.Style.BRIGHT}GLADIATORERNA{colorama.Fore.RESET + colorama.Style.RESET_ALL}}} ----")
         print()
+        self.print_enemy()
+        if self.log:
+            print()
+            self.print_log()
+        print()
         self.print_stats()
         print()
-        print(self.system.environment.next)
+        print(f"{colorama.Fore.LIGHTYELLOW_EX}{self.system.environment.next}{colorama.Fore.RESET}")
         print()
-        print(self.system.environment.enemy.generate_attack())
+        print(self.enemy_attack)
         print()
         options = self.render_items()
         print(f"{colorama.Fore.RED}0{colorama.Fore.RESET}: Go back")
@@ -377,22 +439,59 @@ class GameSection(backend.Section):
         if solution == "0": 
             backend.SectionManager.init_section(self.system, "Menu")
             return
+        player = self.system.player.sys
+        enemy = self.system.environment.enemy.sys
         solution = options.get(solution)
-        if not solution: return
-
+        if solution:
+            player_critical, player_damage = solution.use(enemy)
+            player_log = f"You attacked using {colorama.Fore.MAGENTA}{solution.name}{colorama.Fore.RESET}, dealing {colorama.Fore.RED}{player_damage}{colorama.Fore.RESET} damage" \
+                         f"{" (critical)" if player_critical else ""}"
+            if player_damage == 0: player_log = f"You tried using: {colorama.Fore.MAGENTA}{solution.name}{colorama.Fore.RESET}. It is broken."
+        else: player_log = "You did nothing."
+        enemy_weapon = random.choice(enemy.equipped_weapons)
+        if (max(enemy_weapon.health - 20, 0) / enemy_weapon.max_health) * 0.75 < random.uniform(0, 1): # We'll actually make it less likely for it to hit when the weapon has low health.
+            enemy_critical, enemy_damage = enemy_weapon.use(player)
+            enemy_log = f"Enemy attacked using {colorama.Fore.MAGENTA}{enemy_weapon.name}{colorama.Fore.RESET}, dealing {colorama.Fore.RED}{enemy_damage}{colorama.Fore.RESET} damage" \
+                        f"{" (critical)" if enemy_critical else ""}"
+            if enemy_damage == 0: enemy_log = f"Enemy tried using: {colorama.Fore.MAGENTA}{enemy_weapon.name}{colorama.Fore.RESET}. It is broken."
+        else: enemy_log = "Enemy did nothing."
+        self.log = [
+            "[Remember that damage may be deflected by a amount]",
+            player_log,
+            enemy_log
+        ]
+        self.enemy_attack = self.system.environment.enemy.generate_attack()
+        self.system.environment.move_on() # Move on along the story line
+        if enemy.is_dead:
+            backend.SectionManager.init_section(self.system, "Game.Success")
+        elif player.is_dead:
+            backend.SectionManager.init_section(self.system, "Game.Loss")
     
+    def print_enemy(self) -> None:
+        enemy = self.system.environment.enemy.sys
+        print(f"Enemy: {colorama.Fore.RED}{enemy.name}{colorama.Fore.RESET} - level {colorama.Fore.CYAN}{enemy.level}{colorama.Fore.RESET}")
+    
+    def print_log(self) -> None:
+        print("Log:")
+        for text in self.log:
+            print(f"{text}")
+
     def print_stats(self) -> None:
         player = self.system.player.sys
         enemy = self.system.environment.enemy.sys
-        protection = int(sum(i.max_health for i in player.items if i.itype == backend.System.ItemType.SHIELD))
+        player_protection_list = list((i.health, i.max_health) for i in player.items if i.equipped and i.itype == backend.System.ItemType.SHIELD)
+        enemy_protection_list = list((i.health, i.max_health) for i in enemy.items if i.equipped and i.itype == backend.System.ItemType.SHIELD)
+        player_protection = (int(sum(prot[0] for prot in player_protection_list)), int(sum(prot[1] for prot in player_protection_list)))
+        enemy_protection = (int(sum(prot[0] for prot in enemy_protection_list)), int(sum(prot[1] for prot in enemy_protection_list)))
         print(f"You ({colorama.Fore.GREEN}{player.name}{colorama.Fore.RESET}) have: {(colorama.Fore.GREEN if player.health > 10 else colorama.Fore.RED) + colorama.Style.BRIGHT}{player.health}{colorama.Fore.RESET + colorama.Style.RESET_ALL}{colorama.Fore.BLUE}/{colorama.Fore.RESET}{colorama.Fore.GREEN}{player.max_health}{colorama.Fore.RESET} health"
-              f" ({colorama.Fore.CYAN}{protection}{colorama.Fore.RESET} health from armor)")
-        print(f"Enemy ({colorama.Fore.RED}{enemy.name}{colorama.Fore.RESET}) has: {(colorama.Fore.GREEN if enemy.health > 10 else colorama.Fore.RED) + colorama.Style.BRIGHT}{enemy.health}{colorama.Fore.RESET + colorama.Style.RESET_ALL}{colorama.Fore.BLUE}/{colorama.Fore.RESET}{colorama.Fore.GREEN}{enemy.max_health}{colorama.Fore.RESET} health")
+              f" ({colorama.Fore.CYAN}{max(player_protection[0], 0)}/{player_protection[1]}{colorama.Fore.RESET} protection)")
+        print(f"Enemy ({colorama.Fore.RED}{enemy.name}{colorama.Fore.RESET}) has: {(colorama.Fore.GREEN if enemy.health > 10 else colorama.Fore.RED) + colorama.Style.BRIGHT}{enemy.health}{colorama.Fore.RESET + colorama.Style.RESET_ALL}{colorama.Fore.BLUE}/{colorama.Fore.RESET}{colorama.Fore.GREEN}{enemy.max_health}{colorama.Fore.RESET} health"
+              f" ({colorama.Fore.CYAN}{max(enemy_protection[0], 0)}/{enemy_protection[1]}{colorama.Fore.RESET} protection)")
     
     def render_items(self) -> Dict[str, backend.System.ItemProtocol]:
         processed = {}
         for i, item in enumerate(self.system.player.sys.equipped_weapons):
-            print(f"{colorama.Fore.BLUE}{i+1}{colorama.Fore.RESET}: {colorama.Fore.MAGENTA}{item.name}{colorama.Fore.RESET} - {colorama.Fore.BLUE}{item.generate_attack()}{colorama.Fore.RESET}")
+            print(f"{colorama.Fore.BLUE}{i+1}{colorama.Fore.RESET}: {colorama.Fore.MAGENTA}{item.name}{colorama.Fore.RESET} [{f"{colorama.Fore.GREEN}{max(item.health, 0)}/{item.max_health}{colorama.Fore.RESET}" if item.health >= 0 else f"{colorama.Fore.RED}{abs(item.health)}{colorama.Fore.RESET}"}] - {colorama.Fore.BLUE}{item.generate_attack()}{colorama.Fore.RESET}")
             processed[str(i+1)] = item
         return processed
 
@@ -410,7 +509,9 @@ class SectionLibrary:
         "Inventory": InventorySection(),
         "Inventory.Weapons": InventorySection.Weapons(),
         "Inventory.Armor": InventorySection.Armor(),
-        "Game": GameSection()
+        "Game": GameSection(),
+        "Game.Success": GameSection.Success(),
+        "Game.Loss": GameSection.Loss()
     }
 
     @classmethod

@@ -43,7 +43,7 @@ class Player:
     
     @property
     def health(self) -> int:
-        return int(self._data.get("health", self.max_health) + sum(i.health for i in self.items if i.equipped and i.itype == ItemType.SHIELD))
+        return int(self._data.get("health", self.max_health))
     
     @property
     def max_health(self) -> int:
@@ -51,7 +51,7 @@ class Player:
     
     @property
     def healing(self) -> float:
-        return self._data.get("healing", 1)
+        return self._data.get("healing", 1) * max(1 - self.level * 0.25, 0.25)
     
     @property
     def base_attack(self) -> int:
@@ -72,25 +72,31 @@ class Player:
         return int(self.base_attack * critical_factor * level_factor)
     
     @property
+    def is_dead(self) -> bool:
+        return self.health <= 0
+    
+    @property
     def equipped_weapons(self) -> List["ItemProtocol"]:
         return list(i for i in self.items if i.equipped and i.itype == ItemType.ATTACK)
     
     def damage(self, damage: int) -> int:
-        for item in self.items:
-            if not item.itype == ItemType.SHIELD:
-                continue
-            damage = item.damage(damage)
-        result = min(self.health, damage)
-        self._data["health"] = self.health - damage
-        return result
+        for shield in self.items:
+            if shield.itype == ItemType.SHIELD and shield.equipped:
+                absorbed = max(shield.health, 0)
+                shield.damage(damage)
+                damage -= absorbed
+        if damage <= 0:
+            return
+        self._data["health"] -= damage
+        return damage
     
     def update(self) -> None:
         for item in self.items:
             item.update()
         current_time = time.monotonic()
         if current_time >= self._next_heal:
-            max_health = self._data.get("max_health", 100) * (1 + self.level * 0.25)
-            self._data["health"] = min(self._data.get("health", max_health) + 1, max_health)
+            times = max(1, int((current_time - self._next_heal) // self.healing))
+            self._data["health"] = min(self.health + times, self.max_health)
             self._next_heal = current_time + self.healing
 
 class Enemy(Player):
@@ -145,26 +151,29 @@ class ItemProtocol(Protocol):
     def critical_damage(self) -> float:
         return self._data.get("critical_damage", 0.0)
     
-    def damage(self, damage: int) -> int:
-        result = min(self.health, 0)
-        self._data["health"] = self.health - damage
-        return damage - result
+    def damage(self, damage: int) -> None:
+        new_health = self.health - damage
+        self._data["health"] = int(new_health)
     
     def update(self) -> None:
         current_time = time.monotonic()
         if current_time >= self._next_repair:
-            max_health = self._data.get("max_health", 100)
-            self._data["health"] = min(self._data.get("health", max_health) + 1, max_health)
+            times = max(1, int((current_time - self._next_repair) // self.repair_time))
+            self._data["health"] = min(self.health + times, self.max_health)
             self._next_repair = current_time + self.repair_time
     
-    def use(self, other: Player) -> None:
-        if not self.itype == ItemType.ATTACK: return
-        if self.health <= 0:
-            this_attack = random.randint(*self.attack_range)
-            critical = self.critical_damage if self.critical_chance < random.randint(0, 1) else 1.0
+    def use(self, other: Player) -> Tuple[bool, int]:
+        if not self.itype == ItemType.ATTACK: return False, 0
+        if self.health > 0:
+            effective_health_ratio = max(0, self.health - 10) / self.max_health
+            this_attack = int(random.randint(*self.attack_range) * (1 + min(effective_health_ratio, 1.0)))
+            is_ctitical = self.critical_chance < random.randint(0, 1)
+            critical = self.critical_damage if is_ctitical else 1.0
             total_damage = int((self.owner.attack + this_attack) * critical)
             other.damage(total_damage)
             self.damage(total_damage)
+            return is_ctitical, total_damage
+        return False, 0
 
     def buy(self, player: Player) -> bool:
         if player.points < self.cost:

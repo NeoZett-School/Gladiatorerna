@@ -1,12 +1,12 @@
 # What we can't see on screen
 
-from typing import Tuple, List, Dict, Optional, Any, Self, TypedDict
+from typing import Tuple, List, Dict, Optional, Any, Type, Self, TypedDict
 from enum import Enum, auto
 from names import generate_name
 from story import generate_story
+from items import ItemLibrary
 import System
 import random
-import colorama
 
 class DifficultyData(TypedDict):
     desc: str
@@ -29,14 +29,15 @@ class CONFIG: # We can configure this game here
         "Easy": {
             "desc": "The easiest. If you just want to try the experience.",
             "enemy_max_health_factor": 0.75,
+            "enemy_healing": 1.25,
             "enemy_base_attack": 8,
             "enemy_critical_factor": 0.75,
             "enemy_encounters": {
-                1: (1, 3),
-                2: (2, 4),
-                3: (1, 6),
-                4: (2, 8),
-                5: (3, 9)
+                1: (1, 1),
+                2: (1, 3),
+                3: (1, 4),
+                4: (1, 5),
+                5: (1, 5)
             },
             "rewards": {
                 2: {
@@ -52,14 +53,15 @@ class CONFIG: # We can configure this game here
         "Normal": {
             "desc": "Normal. Use this to get some action!",
             "enemy_max_health_factor": 1.0,
+            "enemy_healing": 1.0,
             "enemy_base_attack": 10,
             "enemy_critical_factor": 1.0,
             "enemy_encounters": {
-                1: (1, 3),
-                2: (2, 4),
-                3: (1, 6),
-                4: (2, 8),
-                5: (3, 9)
+                1: (1, 1),
+                2: (1, 3),
+                3: (1, 4),
+                4: (1, 5),
+                5: (1, 5)
             },
             "rewards": {
                 2: {
@@ -75,14 +77,15 @@ class CONFIG: # We can configure this game here
         "Hard": {
             "desc": "The challenge is to beat this!",
             "enemy_max_health_factor": 1.25,
+            "enemy_healing": 0.75,
             "enemy_base_attack": 15,
             "enemy_critical_factor": 1.15,
             "enemy_encounters": {
-                1: (1, 5),
-                2: (2, 8),
-                3: (1, 9),
-                4: (2, 14),
-                5: (3, 15)
+                1: (1, 1),
+                2: (1, 4),
+                3: (1, 6),
+                4: (1, 7),
+                5: (1, 7)
             },
             "rewards": {
                 2: {
@@ -104,7 +107,8 @@ class CONFIG: # We can configure this game here
             "healing": 1.0,
             "base_attack": 10,
             "critical_chance": 0.5,
-            "critical_factor": 1.0
+            "critical_factor": 1.0,
+            "exp": 0.35
         },
         "Tessa": {
             "name": "Trickedy Tessa", # This is only the displayed name
@@ -161,8 +165,8 @@ class Enemy(System.Handler): # The full enemy implementation.
         self.sys: System.Enemy = System.Enemy({
             "name": name,
             "level": level,
-            "max_health": 100 * (1 + level * 0.25) * difficulty.data.get("enemy_max_health_factor" ,1.0),
-            "healing": 1 + level * 0.1,
+            "max_health": 100 * difficulty.data.get("enemy_max_health_factor" ,1.0),
+            "healing": difficulty.data.get("enemy_healing", 1.0),
             "base_attack": difficulty.data.get("enemy_base_attack", 10) + level,
             "critical_chance": 0.5,
             "critical_factor": difficulty.data.get("enemy_critical_factor", 1.0)
@@ -177,7 +181,16 @@ class Enemy(System.Handler): # The full enemy implementation.
     @classmethod
     def generate_enemy(cls, player: Player, difficulty: Difficulty) -> Self:
         min_level, max_level = difficulty.data.get("enemy_encounters", {}).get(player.sys.level, (1, 1))
-        return cls(generate_name(), random.randint(min_level, max_level), difficulty)
+        enemy = cls(generate_name(), random.randint(min_level, max_level), difficulty)
+        weapon = ItemLibrary.generate_weapon()
+        armor = ItemLibrary.generate_armor()
+        enemy.sys.items.append(weapon)
+        enemy.sys.items.append(armor)
+        weapon.owner = enemy.sys
+        armor.owner = enemy.sys
+        weapon.equipped = True
+        armor.equipped = True
+        return enemy
 
 class Environment:
     # Here, we define the environment.

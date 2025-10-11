@@ -66,6 +66,10 @@ class Player:
         """The total attack of the player."""
         ...
     @property
+    def is_dead(self) -> bool:
+        """Returns wheter the player is dead."""
+        ...
+    @property
     def equipped_weapons(self) -> List["ItemProtocol"]:
         """Get a list of all equipped weapons."""
         ...
@@ -140,7 +144,7 @@ class ItemProtocol(Protocol):
     def update(self) -> None:
         """Update this item."""
         ...
-    def use(self, other: Player) -> None:
+    def use(self, other: Player) -> int:
         """Use this item against another player."""
         ...
     def buy(self, player: Player) -> bool:
