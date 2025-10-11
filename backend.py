@@ -117,21 +117,11 @@ class CONFIG: # We can configure this game here
             "base_attack": 5,
             "critical_chance": 0.65,
             "critical_factor": 0.95,
-        },
-        "Terter": { # The casual test player
-            "name": "Terter",
-            "desc": "The test player.",
-            "max_health": 100,
-            "healing": 1.0,
-            "base_attack": 10,
-            "critical_chance": 0.5,
-            "critical_factor": 1.0,
-            "points": 1000
-        },
+        }
     }
     enemy_attack_text = {
-        "Alex": ["He slashes the sword at you."],
-        "default": ["They punsh you like a punshing bag!"]
+        "Alex": ["He slashes the sword at you.", "He uses the power of minecraft!"],
+        "default": ["They punsh you like a punshing bag!", "They hit you right in the stomach."]
     }
 
 class Difficulty(Enum): # enums allow setting a state
