@@ -43,11 +43,11 @@ class Player:
     
     @property
     def health(self) -> int:
-        return int((self._data.get("health", self.max_health) + sum(i.health for i in self.items if i.equipped)) * (1 + self.level * 0.25))
+        return int(self._data.get("health", self.max_health) + sum(i.health for i in self.items if i.equipped and i.itype == ItemType.SHIELD))
     
     @property
     def max_health(self) -> int:
-        return int(self._data.get("max_health", 100)) + sum(i.max_health for i in self.items)
+        return int(self._data.get("max_health", 100) + sum(i.max_health for i in self.items if i.equipped and i.itype == ItemType.SHIELD) * (1 + self.level * 0.25))
     
     @property
     def healing(self) -> float:
@@ -67,13 +67,13 @@ class Player:
     
     @property
     def attack(self) -> int:
-        weapon_damage = sum(random.randint(i.attack_range[0], i.attack_range[1]) for i in self.items if i.equipped)
-        critical_factor = (
-            sum(i.critical_damage for i in self.items if random.uniform(0, 1) < i.critical_chance and i.equipped) * self.critical_factor 
-            if random.uniform(0, 1) < self.critical_chance else 1
-        )
+        critical_factor = self.critical_factor if self.critical_chance < random.uniform(0, 1) else 1.0
         level_factor = (1 + self.level * 0.25)
-        return int((self.base_attack + weapon_damage * critical_factor) * level_factor)
+        return int(self.base_attack * critical_factor * level_factor)
+    
+    @property
+    def equipped_weapons(self) -> List["ItemProtocol"]:
+        return list(i for i in self.items if i.equipped and i.itype == ItemType.ATTACK)
     
     def damage(self, damage: int) -> int:
         for item in self.items:
@@ -89,7 +89,8 @@ class Player:
             item.update()
         current_time = time.monotonic()
         if current_time >= self._next_heal:
-            self._data["health"] = min(self.health + 1, self.max_health)
+            max_health = self._data.get("max_health", 100) * (1 + self.level * 0.25)
+            self._data["health"] = min(self._data.get("health", max_health) + 1, max_health)
             self._next_heal = current_time + self.healing
 
 class Enemy(Player):
@@ -111,6 +112,10 @@ class ItemProtocol(Protocol):
     @property
     def desc(self) -> str:
         return self._data.get("desc", "<No description>")
+    
+    @property
+    def intel(self) -> str:
+        return self._data.get("intel", "<No intel>")
     
     @property
     def cost(self) -> int:
@@ -137,8 +142,8 @@ class ItemProtocol(Protocol):
         return self._data.get("critical_chance", 0.0)
     
     @property
-    def critical_damage(self) -> int:
-        return int(self._data.get("critical_damage", 0))
+    def critical_damage(self) -> float:
+        return self._data.get("critical_damage", 0.0)
     
     def damage(self, damage: int) -> int:
         result = min(self.health, 0)
@@ -148,11 +153,18 @@ class ItemProtocol(Protocol):
     def update(self) -> None:
         current_time = time.monotonic()
         if current_time >= self._next_repair:
-            self._data["health"] = min(self.health + 1, self.max_health)
+            max_health = self._data.get("max_health", 100)
+            self._data["health"] = min(self._data.get("health", max_health) + 1, max_health)
             self._next_repair = current_time + self.repair_time
     
     def use(self, other: Player) -> None:
-        other.damage(self.parent.attack)
+        if not self.itype == ItemType.ATTACK: return
+        if self.health <= 0:
+            this_attack = random.randint(*self.attack_range)
+            critical = self.critical_damage if self.critical_chance < random.randint(0, 1) else 1.0
+            total_damage = int((self.owner.attack + this_attack) * critical)
+            other.damage(total_damage)
+            self.damage(total_damage)
 
     def buy(self, player: Player) -> bool:
         if player.points < self.cost:
@@ -160,6 +172,8 @@ class ItemProtocol(Protocol):
         player._data["points"] = player.points - self.cost
         player.items.append(self)
         self.owner = player
+        self.equipped = True
+        return True
 
 class Handler(Protocol):
     @property

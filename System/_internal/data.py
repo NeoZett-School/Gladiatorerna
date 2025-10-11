@@ -25,9 +25,10 @@ class PlayerData(TypedDict):
 class ItemData(TypedDict):
     name: str
     desc: str
+    intel: str
     health: int # Is either dependent on usage (f.e swords) or will extend the player health
     max_health: int
     repair_time: float # The time it takes to repair the item (may have multiple)
     attack_range: Tuple[int, int]
     critical_chance: float
-    critical_damage: int
+    critical_damage: float

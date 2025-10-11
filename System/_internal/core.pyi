@@ -55,7 +55,7 @@ class Player:
         ...
     @property
     def critical_chance(self) -> float:
-        """The base critical chance of this player."""
+        """The critical chance for this player."""
         ...
     @property
     def critical_factor(self) -> float:
@@ -64,6 +64,10 @@ class Player:
     @property
     def attack(self) -> int:
         """The total attack of the player."""
+        ...
+    @property
+    def equipped_weapons(self) -> List["ItemProtocol"]:
+        """Get a list of all equipped weapons."""
         ...
     def damage(self, damage: int) -> bool:
         """Attack the player."""
@@ -99,6 +103,10 @@ class ItemProtocol(Protocol):
         """The description of this item."""
         ...
     @property
+    def intel(self) -> str:
+        """Simple intel for this item."""
+        ...
+    @property
     def cost(self) -> int:
         """The cost of this item."""
         ...
@@ -123,7 +131,7 @@ class ItemProtocol(Protocol):
         """The critical chance of this item."""
         ...
     @property
-    def critical_damage(self) -> int:
+    def critical_damage(self) -> float:
         """The critical damage of this item."""
         ...
     def damage(self, damage: int) -> bool:

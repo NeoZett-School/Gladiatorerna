@@ -6,6 +6,7 @@ from names import generate_name
 from story import generate_story
 import System
 import random
+import colorama
 
 class DifficultyData(TypedDict):
     desc: str
@@ -30,16 +31,22 @@ class CONFIG: # We can configure this game here
             "enemy_max_health_factor": 0.75,
             "enemy_base_attack": 8,
             "enemy_critical_factor": 0.75,
-            "rewards": {
-                2: {"points": 50},
-                3: {"points": 100}
-            },
             "enemy_encounters": {
                 1: (1, 3),
                 2: (2, 4),
                 3: (1, 6),
                 4: (2, 8),
                 5: (3, 9)
+            },
+            "rewards": {
+                2: {
+                    "points": 50,
+                    "exp": 0.5
+                },
+                3: {
+                    "points": 100,
+                    "exp": 0.5
+                }
             }
         },
         "Normal": {
@@ -47,16 +54,22 @@ class CONFIG: # We can configure this game here
             "enemy_max_health_factor": 1.0,
             "enemy_base_attack": 10,
             "enemy_critical_factor": 1.0,
-            "rewards": {
-                2: {"points": 10},
-                3: {"points": 30}
-            },
             "enemy_encounters": {
                 1: (1, 3),
                 2: (2, 4),
                 3: (1, 6),
                 4: (2, 8),
                 5: (3, 9)
+            },
+            "rewards": {
+                2: {
+                    "points": 10,
+                    "exp": 0.25
+                },
+                3: {
+                    "points": 30,
+                    "exp": 0.25
+                }
             }
         },
         "Hard": {
@@ -64,16 +77,22 @@ class CONFIG: # We can configure this game here
             "enemy_max_health_factor": 1.25,
             "enemy_base_attack": 15,
             "enemy_critical_factor": 1.15,
-            "rewards": {
-                2: {"points": 5},
-                3: {"points": 15}
-            },
             "enemy_encounters": {
                 1: (1, 5),
                 2: (2, 8),
                 3: (1, 9),
                 4: (2, 14),
                 5: (3, 15)
+            },
+            "rewards": {
+                2: {
+                    "points": 5,
+                    "exp": 0.15
+                },
+                3: {
+                    "points": 15,
+                    "exp": 0.15
+                }
             }
         }
     }
@@ -88,14 +107,28 @@ class CONFIG: # We can configure this game here
             "critical_factor": 1.0
         },
         "Tessa": {
-            "name": "Trickedy Tessa",
+            "name": "Trickedy Tessa", # This is only the displayed name
             "desc": "The female protagonist.",
             "max_health": 150, # We're tough!
             "healing": 0.75,
             "base_attack": 5,
             "critical_chance": 0.65,
             "critical_factor": 0.95,
-        }
+        },
+        "Terter": { # The casual test player
+            "name": "Terter",
+            "desc": "The test player.",
+            "max_health": 100,
+            "healing": 1.0,
+            "base_attack": 10,
+            "critical_chance": 0.5,
+            "critical_factor": 1.0,
+            "points": 1000
+        },
+    }
+    enemy_attack_text = {
+        "Alex": ["He slashes the sword at you."],
+        "default": ["They punsh you like a punshing bag!"]
     }
 
 class Difficulty(Enum): # enums allow setting a state
@@ -117,12 +150,15 @@ class Difficulty(Enum): # enums allow setting a state
 class Player(System.Handler): # We inherit the handler to create a player
     def __init__(self, name: str) -> Self:
         super().__init__()
-        self.player: System.Player = System.Player(CONFIG.characters[name.capitalize()])
+        self.sys: System.Player = System.Player(CONFIG.characters[name.capitalize()])
+    
+    def on_update(self) -> None:
+        self.sys.update()
 
 class Enemy(System.Handler): # The full enemy implementation.
     def __init__(self, name: str, level: int, difficulty: Difficulty) -> Self:
         super().__init__()
-        self.enemy: System.Enemy = System.Enemy({
+        self.sys: System.Enemy = System.Enemy({
             "name": name,
             "level": level,
             "max_health": 100 * (1 + level * 0.25) * difficulty.data.get("enemy_max_health_factor" ,1.0),
@@ -131,9 +167,16 @@ class Enemy(System.Handler): # The full enemy implementation.
             "critical_chance": 0.5,
             "critical_factor": difficulty.data.get("enemy_critical_factor", 1.0)
         })
+    
+    def on_update(self) -> None:
+        self.sys.update()
+    
+    def generate_attack(self) -> str:
+        return random.choice(CONFIG.enemy_attack_text.get(self.sys.name, CONFIG.enemy_attack_text["default"]))
 
     @classmethod
-    def generate_enemy(cls, min_level: int, max_level: int, difficulty: Difficulty) -> Self:
+    def generate_enemy(cls, player: Player, difficulty: Difficulty) -> Self:
+        min_level, max_level = difficulty.data.get("enemy_encounters", {}).get(player.sys.level, (1, 1))
         return cls(generate_name(), random.randint(min_level, max_level), difficulty)
 
 class Environment:
@@ -144,16 +187,18 @@ class Environment:
         self.player: Player = player
         self.enemy: Enemy = enemy
         self.story: List[str] = generate_story()
-        self.rewards: Dict[str, Any] = difficulty.data.get("rewards", {}).get(player.player.level + 1, {})
+        self.rewards: Dict[str, Any] = difficulty.data.get("rewards", {}).get(player.sys.level + 1, {})
         self._story_index: int = 0
     
     @property
     def next(self) -> str:
         text = self.story[self._story_index]
+        return text
+    
+    def move_on(self) -> None:
         self._story_index += 1
         if self._story_index > len(self.story) - 1:
             self._story_index = 0
-        return text
 
 class Section(System.Handler):
     handlers: List[System.Handler]

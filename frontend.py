@@ -1,9 +1,14 @@
 # What we can see on screen
-
-from typing import Tuple, List, Dict, Self
 import colorama
-import backend
+
+print("Loading...", end="\r")
+
+from typing import Tuple, List, Dict, Optional, Any
 from items import ItemLibrary
+import backend
+
+if not __name__ == "__main__":
+    exit()
 
 colorama.init()
 
@@ -11,17 +16,28 @@ class MenuSection(backend.Section):
     def on_render(self) -> None:
         super().on_render()
         print(f"Welcome to {colorama.Fore.CYAN + colorama.Style.BRIGHT}Gladiatorerna{colorama.Fore.RESET + colorama.Style.RESET_ALL}!")
-        print("")
+        if not self.system.player:
+            print()
+            print(f"{colorama.Style.BRIGHT}Before{colorama.Style.RESET_ALL} you {colorama.Fore.GREEN}Start{colorama.Fore.RESET}, check that you have chosen"
+                  f" your character in the {colorama.Fore.CYAN}Settings{colorama.Fore.RESET}.")
+            print(f"The {colorama.Fore.MAGENTA}Shop{colorama.Fore.RESET} and {colorama.Fore.CYAN}Inventory{colorama.Fore.RESET}"
+                  " will be unlocked once you've started the game and your character ")
+            print("has been chosen. After you have started, go back and buy your initial gear for the fight.")
+            print("To do this, open the store. Then, you can go back into the battlefield, selecting"
+                  f" {colorama.Fore.GREEN}Start{colorama.Fore.RESET}.")
+        print()
         print("Where would you like to go?")
         options = {
             # id, title, section
             "1": (f"{colorama.Fore.GREEN}Start{colorama.Fore.RESET}", "Game"),
             "2": (f"{colorama.Fore.CYAN}Settings{colorama.Fore.RESET}", "Settings"),
+            "3": (f"{colorama.Fore.YELLOW}Intel{colorama.Fore.RESET}", "Intel")
         }
-        exit_id = "3"
+        exit_id = "4"
         if self.system.player: # If the game has initialized, we can safely reveal the shop!
-            options["3"] = (f"{colorama.Fore.MAGENTA}Shop{colorama.Fore.RESET}", "Shop")
-            exit_id = "4"
+            options["4"] = (f"{colorama.Fore.MAGENTA}Shop{colorama.Fore.RESET}", "Shop")
+            options["5"] = (f"{colorama.Fore.CYAN + colorama.Style.BRIGHT}Inventory{colorama.Fore.RESET + colorama.Style.RESET_ALL}", "Inventory")
+            exit_id = "6"
         options[exit_id] = (f"{colorama.Fore.RED}Exit{colorama.Fore.RESET}", "Exit")
         for k, v in options.items():
             print(f"{colorama.Fore.BLUE}{k}{colorama.Fore.RESET}: {v[0]}")
@@ -41,8 +57,9 @@ class SettingsSection(backend.Section):
         options = {
             # id, title, current value
             "1": ("Difficulty", self.system.difficulty.name),
-            "2": ("Character", self.system.char_name)
         }
+        if not self.system.player:
+            options["2"] = ("Character", self.system.char_name)
         print(f"{colorama.Fore.RED}0{colorama.Fore.RESET}: Go back")
         for k, v in options.items():
             print(f"{colorama.Fore.BLUE}{k}{colorama.Fore.RESET}: {colorama.Fore.YELLOW}{v[0]}{colorama.Fore.RESET} [{colorama.Fore.MAGENTA}{v[1]}{colorama.Fore.RESET}]")
@@ -76,6 +93,30 @@ class SettingsSection(backend.Section):
                 self.system.char_name = new_character
 
 class ShopSection(backend.Section):
+    class Popup(backend.Section):
+        def init(self) -> None:
+            super().init()
+            self.shop: "ShopSection" = SectionLibrary.sections["Shop"]
+        
+        def on_render(self) -> None:
+            super().on_render()
+            item = self.shop.to_buy
+            options = {
+                # id, title, code
+                "1": (f"{colorama.Fore.GREEN + colorama.Style.BRIGHT}Yes{colorama.Fore.RESET + colorama.Style.RESET_ALL}", "Y"),
+                "2": (f"{colorama.Fore.RED + colorama.Style.BRIGHT}No{colorama.Fore.RESET + colorama.Style.RESET_ALL}", "N")
+            }
+            print(f"Are you sure you want to buy {colorama.Fore.MAGENTA + colorama.Style.BRIGHT}{item.name}{colorama.Fore.RESET + colorama.Style.RESET_ALL}?")
+            for k, v in options.items():
+                print(f"{colorama.Fore.BLUE}{k}{colorama.Fore.RESET}: {v[0]}")
+            solution = options.get(input("Select one option: ").lower().strip())
+            if not solution: return
+            if solution[1] == "Y":
+                if not item.buy(self.system.player.sys):
+                    print("You can't buy this item.")
+                    input("Press enter to continue...")
+            backend.SectionManager.init_section(self.system, "Shop")
+
     class Directory(backend.Section):
         items: List[Tuple[str, backend.System.ItemProtocol]]
 
@@ -86,9 +127,10 @@ class ShopSection(backend.Section):
         def on_render(self) -> None:
             super().on_render()
             self.shop.render_title()
-            points = self.system.player.player.points
+            points = int(self.system.player.sys.points)
             print()
             self.shop.render_points(points)
+            self.shop.render_count(len(self.items))
             print()
             print(f"{colorama.Fore.RED}0{colorama.Fore.RESET}: Go back")
             options = self.shop.render_items(points, self.items)
@@ -98,15 +140,23 @@ class ShopSection(backend.Section):
                 return
             solution = options.get(solution)
             if not solution: return
-            if not solution.buy(self.system.player):
-                print("You can't buy this item.")
-                input("Press enter to continue...")
+            self.shop.to_buy = solution
+            backend.SectionManager.init_section(self.system, "Shop.Popup")
     
     class Weapons(Directory):
-        items = [(n, i) for n, i in ItemLibrary.weapons.items()]
+        def init(self) -> None:
+            super().init()
+            self.items = [(n, i) for n, i in ItemLibrary.weapons.items() if not i in self.system.player.sys.items or not i.owner == self.system.player.sys]
 
     class Armor(Directory): # Caching the items into a list that helps to unpack does also help with performance.
-        items = [(n, i) for n, i in ItemLibrary.armor.items()]
+        def init(self) -> None:
+            super().init()
+            self.items = [(n, i) for n, i in ItemLibrary.armor.items() if not i in self.system.player.sys.items or not i.owner == self.system.player.sys]
+    
+    def init(self) -> None:
+        super().init()
+        self.to_buy: Optional[backend.System.ItemProtocol] = None
+        self.items: int = list(i for i in ItemLibrary.items if not i in self.system.player.sys.items or not i.owner == self.system.player.sys)
 
     def on_render(self) -> None:
         super().on_render()
@@ -116,11 +166,14 @@ class ShopSection(backend.Section):
             return
 
         self.render_title()
-        print("")
+        print()
+        self.render_points(int(self.system.player.sys.points))
+        self.render_count(len(self.items))
+        print()
         options = {
             # id, title, section
-            "1": (f"{colorama.Fore.RED}Weapons{colorama.Fore.RESET}", "Weapons"),
-            "2": (f"{colorama.Fore.GREEN}Armor{colorama.Fore.RESET}", "Armor")
+            "1": (f"{colorama.Fore.RED}Weapons{colorama.Fore.RESET}", "Shop.Weapons"),
+            "2": (f"{colorama.Fore.GREEN}Armor{colorama.Fore.RESET}", "Shop.Armor")
         }
         print(f"{colorama.Fore.RED}0{colorama.Fore.RESET}: Go back")
         for k, v in options.items():
@@ -139,35 +192,224 @@ class ShopSection(backend.Section):
     def render_points(self, points: int) -> None:
         print(f"Your points: {colorama.Fore.YELLOW + colorama.Style.BRIGHT}{points}p{colorama.Fore.RESET + colorama.Style.RESET_ALL}")
     
+    def render_count(self, count: int) -> None:
+        print(f"Items for sale: {count}")
+    
     def render_items(self, points: int, items: List[Tuple[str, backend.System.ItemProtocol]]) -> Dict[str, backend.System.ItemProtocol]:
         processed = {}
         for i, (name, item) in enumerate(items):
-            if item in self.system.player.player.items or item.owner == self.system.player.player: continue
-            print(f"{colorama.Fore.BLUE}{i+1}{colorama.Fore.RESET}: {colorama.Fore.MAGENTA}{name}{colorama.Fore.RESET} [{(colorama.Fore.GREEN if points > item.cost else colorama.Fore.RED) + colorama.Style.BRIGHT}{item.cost}p{colorama.Fore.RESET + colorama.Style.RESET_ALL}] - {colorama.Fore.BLUE}{item.desc}{colorama.Fore.RESET}")
+            if item in self.system.player.sys.items or item.owner == self.system.player.sys: continue
+            print(f"{colorama.Fore.BLUE}{i+1}{colorama.Fore.RESET}: {colorama.Fore.MAGENTA}{name}{colorama.Fore.RESET} [{(colorama.Fore.GREEN if points >= item.cost else colorama.Fore.RED) + colorama.Style.BRIGHT}{item.cost}p{colorama.Fore.RESET + colorama.Style.RESET_ALL}] - {colorama.Fore.BLUE}{item.desc}{colorama.Fore.RESET}")
             processed[str(i+1)] = item
         return processed
 
+class InventorySection(backend.Section):
+    class Directory(backend.Section):
+        items: List[Tuple[str, backend.System.ItemProtocol]]
+
+        def init(self) -> None:
+            super().init()
+            self.inv: "InventorySection" = SectionLibrary.sections["Inventory"]
+
+        def on_render(self) -> None:
+            super().on_render()
+            self.inv.render_title()
+            print()
+            print(f"{colorama.Fore.RED}0{colorama.Fore.RESET}: Go back")
+            options = self.inv.render_items(self.items)
+            solution = input("Select one item you want to change: ").lower().strip()
+            if solution == "0": 
+                backend.SectionManager.init_section(self.system, "Inventory")
+                return
+            solution = options.get(solution)
+            if not solution: return
+            solution.equipped = not solution.equipped
+    
+    class Weapons(Directory):
+        items = [(n, i) for n, i in ItemLibrary.weapons.items()]
+
+    class Armor(Directory): # Caching the items into a list that helps to unpack does also help with performance.
+        items = [(n, i) for n, i in ItemLibrary.armor.items()]
+
+    def on_render(self) -> None:
+        super().on_render()
+
+        if not self.system.player: # We are not initialized yet!
+            backend.SectionManager.init_section(self.system, "Menu")
+            return
+
+        self.render_title()
+        print()
+        self.render_count()
+        print()
+        options = {
+            # id, title, section
+            "1": (f"{colorama.Fore.RED}Weapons{colorama.Fore.RESET}", "Inventory.Weapons"),
+            "2": (f"{colorama.Fore.GREEN}Armor{colorama.Fore.RESET}", "Inventory.Armor")
+        }
+        print(f"{colorama.Fore.RED}0{colorama.Fore.RESET}: Go back")
+        for k, v in options.items():
+            print(f"{colorama.Fore.BLUE}{k}{colorama.Fore.RESET}: {v[0]}")
+        solution = input("Select one directory: ").lower().strip()
+        if solution == "0": 
+            backend.SectionManager.init_section(self.system, "Menu")
+            return
+        solution = options.get(solution)
+        if not solution: return
+        backend.SectionManager.init_section(self.system, solution[1])
+
+    def render_title(self) -> None:
+        print(f"---- {{{colorama.Fore.CYAN + colorama.Style.BRIGHT}Inventory{colorama.Fore.RESET + colorama.Style.RESET_ALL}}} ----")
+    
+    def render_count(self) -> None:
+        print(f"Your items: {colorama.Fore.YELLOW + colorama.Style.BRIGHT}{len(self.system.player.sys.items)}{colorama.Fore.RESET + colorama.Style.RESET_ALL}")
+
+    def render_items(self, items: List[Tuple[str, backend.System.ItemProtocol]]) -> Dict[str, backend.System.ItemProtocol]:
+        processed = {}
+        for i, (name, item) in enumerate(items):
+            if not item in self.system.player.sys.items or not item.owner == self.system.player.sys: continue
+            print(f"{colorama.Fore.BLUE}{i+1}{colorama.Fore.RESET}: {colorama.Fore.MAGENTA}{name}{colorama.Fore.RESET} [{(colorama.Fore.GREEN if item.equipped else colorama.Fore.RED) + colorama.Style.BRIGHT}{"Equipped" if item.equipped else "Unequipped"}{colorama.Fore.RESET + colorama.Style.RESET_ALL}] - {colorama.Fore.BLUE}{item.desc}{colorama.Fore.RESET}")
+            processed[str(i+1)] = item
+        return processed
+
+class IntelSection(backend.Section):
+    def on_render(self) -> None:
+        super().on_render()
+
+        # Items
+        print("Items:")
+        for item in ItemLibrary.items:
+            if self.system.player:
+                owned = item in self.system.player.sys.items and item.owner == self.system.player.sys
+            print(f"{colorama.Fore.MAGENTA}{item.name}{colorama.Fore.RESET}"
+                  f"{f" [{(colorama.Fore.GREEN if item.equipped and owned else colorama.Fore.RED) + colorama.Style.BRIGHT}{"Equipped" if item.equipped else "Unequipped" if owned else "Not owned"}{colorama.Fore.RESET + colorama.Style.RESET_ALL}]" if self.system.player else ""}" 
+                  f" - {colorama.Fore.BLUE}{item.desc}{colorama.Fore.RESET}"
+                  f" - {colorama.Fore.BLUE}{item.intel}{colorama.Fore.RESET}")
+            
+        # Stats
+        print()
+        print("Player:")
+        if self.system.player:
+            player = self.system.player.sys
+            print(f"-- {colorama.Fore.YELLOW}{player.name}{colorama.Fore.RESET} --")
+            items = {
+                # Title, value
+                "Points": f"{int(player.points)}p",
+                "Level": f"{player.level}",
+                "Exp": f"{player.exp}",
+                "Max Health": f"{player.max_health}",
+                "Healing": f"{player.healing} seconds/hp",
+                "Base Attack": f"{player.base_attack}",
+                "Critical Chance": f"{player.critical_chance}",
+                "Critical Factor": f"{player.critical_factor}"
+            }
+            for title, value in items.items():
+                print(f"{colorama.Fore.YELLOW}{title}{colorama.Fore.RESET}: {colorama.Fore.BLUE}{value}{colorama.Fore.RESET}")
+        else: print(f"{colorama.Fore.YELLOW}Player hasn't been made yet.{colorama.Fore.RESET}")
+
+        print()
+        print(f"{colorama.Fore.RED}0{colorama.Fore.RESET}: Go back")
+        solution = input("Select one option: ").lower().strip()
+        if solution == "0": 
+            backend.SectionManager.init_section(self.system, "Menu")
+            return
+
 class GameSection(backend.Section):
+    class Directory(backend.Section):
+        title: str
+        rewards: Dict[str, Any]
+        def on_render(self) -> None:
+            super().on_render()
+            print(self.title)
+            for reward, amount in self.rewards:
+                print(f"{colorama.Fore.YELLOW}{reward}{colorama.Fore.RESET} {colorama.Fore.GREEN + colorama.Style.BRIGHT}+{amount}{colorama.Fore.RESET + colorama.Style.RESET_ALL}")
+            
+            print("Do you want to continue")
+
+    class Success(Directory):
+        title = f"{colorama.Fore.GREEN}Success! You won rewards: {colorama.Fore.RESET}"
+        def init(self) -> None:
+            super().init()
+            self.rewards = self.system.environment.rewards
+    
+    class Loss(backend.Section):
+        title = f"{colorama.Fore.RED}Oh no! You lost rewards: {colorama.Fore.RESET}"
+        def init(self) -> None:
+            super().init()
+            self.rewards = self.system.environment.rewards
+
     def init(self) -> None:
         super().init()
-        if not self.system.player: # Some options are unchangeable after starting the game, like the character
+        if not self.system.player: 
+            # Some options are unchangeable after starting the game, like the character. 
+            # Whilst some are only initialy created once.
             self.system.player = backend.Player(self.system.char_name)
+            difficulty = self.system.difficulty
+            self.system.environment = backend.Environment(
+                self.system.player, 
+                backend.Enemy.generate_enemy(
+                    self.system.player,
+                    difficulty
+                ),
+                difficulty
+            )
+            self.handlers = [self.system.player]
+    
+    def on_update(self) -> None:
+        super().on_update()
+        # Here, we will handle moving on througout the game, and also enemies damage
+        # We'll also update the current enemy here
+        self.system.environment.enemy.on_update()
 
     def on_render(self) -> None:
         super().on_render()
         print(f"---- {{{colorama.Fore.CYAN + colorama.Style.BRIGHT}GLADIATORERNA{colorama.Fore.RESET + colorama.Style.RESET_ALL}}} ----")
         print()
+        self.print_stats()
+        print()
+        print(self.system.environment.next)
+        print()
+        print(self.system.environment.enemy.generate_attack())
+        print()
+        options = self.render_items()
         print(f"{colorama.Fore.RED}0{colorama.Fore.RESET}: Go back")
-        input()
+        solution = input("Select one option: ").lower().strip()
+        if solution == "0": 
+            backend.SectionManager.init_section(self.system, "Menu")
+            return
+        solution = options.get(solution)
+        if not solution: return
+
+    
+    def print_stats(self) -> None:
+        player = self.system.player.sys
+        enemy = self.system.environment.enemy.sys
+        protection = int(sum(i.max_health for i in player.items if i.itype == backend.System.ItemType.SHIELD))
+        print(f"You ({colorama.Fore.GREEN}{player.name}{colorama.Fore.RESET}) have: {(colorama.Fore.GREEN if player.health > 10 else colorama.Fore.RED) + colorama.Style.BRIGHT}{player.health}{colorama.Fore.RESET + colorama.Style.RESET_ALL}{colorama.Fore.BLUE}/{colorama.Fore.RESET}{colorama.Fore.GREEN}{player.max_health}{colorama.Fore.RESET} health"
+              f" ({colorama.Fore.CYAN}{protection}{colorama.Fore.RESET} health from armor)")
+        print(f"Enemy ({colorama.Fore.RED}{enemy.name}{colorama.Fore.RESET}) has: {(colorama.Fore.GREEN if enemy.health > 10 else colorama.Fore.RED) + colorama.Style.BRIGHT}{enemy.health}{colorama.Fore.RESET + colorama.Style.RESET_ALL}{colorama.Fore.BLUE}/{colorama.Fore.RESET}{colorama.Fore.GREEN}{enemy.max_health}{colorama.Fore.RESET} health")
+    
+    def render_items(self) -> Dict[str, backend.System.ItemProtocol]:
+        processed = {}
+        for i, item in enumerate(self.system.player.sys.equipped_weapons):
+            print(f"{colorama.Fore.BLUE}{i+1}{colorama.Fore.RESET}: {colorama.Fore.MAGENTA}{item.name}{colorama.Fore.RESET} - {colorama.Fore.BLUE}{item.generate_attack()}{colorama.Fore.RESET}")
+            processed[str(i+1)] = item
+        return processed
+
 
 class SectionLibrary: 
     # We create all sections and load them one by one.
     sections: Dict[str, backend.Section] = {
         "Menu": MenuSection(),
         "Settings": SettingsSection(),
+        "Intel": IntelSection(),
         "Shop": ShopSection(),
-        "Weapons": ShopSection.Weapons(),
-        "Armor": ShopSection.Armor(),
+        "Shop.Popup": ShopSection.Popup(),
+        "Shop.Weapons": ShopSection.Weapons(),
+        "Shop.Armor": ShopSection.Armor(),
+        "Inventory": InventorySection(),
+        "Inventory.Weapons": InventorySection.Weapons(),
+        "Inventory.Armor": InventorySection.Armor(),
         "Game": GameSection()
     }
 
@@ -177,9 +419,8 @@ class SectionLibrary:
         for name, section in cls.sections.items():
             backend.SectionManager.load_section(name, section)
 
-if __name__ == "__main__":
-    SectionLibrary.load()
+SectionLibrary.load()
 
-    game = backend.Game()
-    backend.SectionManager.init_section(game, "Menu")
-    game.run()
+game = backend.Game()
+backend.SectionManager.init_section(game, "Menu")
+game.run()
