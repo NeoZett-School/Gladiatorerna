@@ -133,11 +133,11 @@ class ItemProtocol(Protocol):
     
     @property
     def max_health(self) -> int:
-        return int(self._data.get("max_health", 100))
+        return int(self._data.get("max_health", 100) * (1 + self.upgrades * 0.25))
     
     @property
     def repair_time(self) -> float:
-        return self._data.get("repair_time", 0.0)
+        return max(self._data.get("repair_time", 0.0) - (self.upgrades * 0.05), 0.25)
     
     @property
     def attack_range(self) -> Tuple[int, int]:
@@ -150,6 +150,14 @@ class ItemProtocol(Protocol):
     @property
     def critical_damage(self) -> float:
         return self._data.get("critical_damage", 0.0)
+    
+    @property
+    def upgrades(self) -> int:
+        return int(self._data.get("upgrades", 0))
+    
+    @property
+    def upgrade_cost(self) -> int:
+        return int((self.cost if self.cost > 0 else 2) * self.upgrades * 1.5)
     
     def damage(self, damage: int) -> None:
         new_health = self.health - damage
@@ -169,7 +177,7 @@ class ItemProtocol(Protocol):
             this_attack = int(random.randint(*self.attack_range) * (1 + min(effective_health_ratio, 1.0)))
             is_ctitical = self.critical_chance < random.randint(0, 1)
             critical = self.critical_damage if is_ctitical else 1.0
-            total_damage = int((self.owner.attack + this_attack) * critical)
+            total_damage = int((self.owner.attack + this_attack) * (1 + self.upgrades * 0.25) * critical)
             other.damage(total_damage)
             self.damage(total_damage)
             return is_ctitical, total_damage
@@ -182,6 +190,13 @@ class ItemProtocol(Protocol):
         player.items.append(self)
         self.owner = player
         self.equipped = True
+        return True
+    
+    def upgrade(self) -> bool:
+        if self.owner.points < self.upgrade_cost:
+            return False
+        self.owner._data["points"] = self.owner.points - self.upgrade_cost
+        self._data["upgrades"] = self.upgrades + 1
         return True
 
 class Handler(Protocol):

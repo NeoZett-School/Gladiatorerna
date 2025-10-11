@@ -37,8 +37,9 @@ class MenuSection(backend.Section):
         exit_id = "4"
         if self.system.player: # If the game has initialized, we can safely reveal the shop!
             options["4"] = (f"{colorama.Fore.MAGENTA}Shop{colorama.Fore.RESET}", "Shop")
-            options["5"] = (f"{colorama.Fore.CYAN + colorama.Style.BRIGHT}Inventory{colorama.Fore.RESET + colorama.Style.RESET_ALL}", "Inventory")
-            exit_id = "6"
+            options["5"] = (f"{colorama.Fore.LIGHTBLUE_EX}Blacksmith{colorama.Fore.RESET}", "Blacksmith")
+            options["6"] = (f"{colorama.Fore.CYAN + colorama.Style.BRIGHT}Inventory{colorama.Fore.RESET + colorama.Style.RESET_ALL}", "Inventory")
+            exit_id = "7"
         options[exit_id] = (f"{colorama.Fore.RED}Exit{colorama.Fore.RESET}", "Exit")
         for k, v in options.items():
             print(f"{colorama.Fore.BLUE}{k}{colorama.Fore.RESET}: {v[0]}")
@@ -285,7 +286,8 @@ class IntelSection(backend.Section):
             if self.system.player:
                 owned = item in self.system.player.sys.items and item.owner == self.system.player.sys
             print(f"{colorama.Fore.MAGENTA}{item.name}{colorama.Fore.RESET}"
-                  f"{f" [{(colorama.Fore.GREEN if item.equipped and owned else colorama.Fore.RED) + colorama.Style.BRIGHT}{"Equipped" if item.equipped else "Unequipped" if owned else "Not owned"}{colorama.Fore.RESET + colorama.Style.RESET_ALL}]" if self.system.player else ""}" 
+                  f"{f" ({colorama.Fore.YELLOW}{item.upgrades}{colorama.Fore.RESET})" \
+                  f" [{(colorama.Fore.GREEN if item.equipped and owned else colorama.Fore.RED) + colorama.Style.BRIGHT}{"Equipped" if item.equipped else "Unequipped" if owned else "Not owned"}{colorama.Fore.RESET + colorama.Style.RESET_ALL}]" if self.system.player else ""}" 
                   f" - {colorama.Fore.BLUE}{item.desc}{colorama.Fore.RESET}"
                   f" - {colorama.Fore.BLUE}{item.intel}{colorama.Fore.RESET}")
             
@@ -321,7 +323,115 @@ class IntelSection(backend.Section):
             return
 
 class BlacksmithSection(backend.Section):
-    ...
+    class Popup(backend.Section):
+        def init(self) -> None:
+            super().init()
+            self.blacksmith: "BlacksmithSection" = SectionLibrary.sections["Blacksmith"]
+        
+        def on_render(self) -> None:
+            super().on_render()
+            item = self.blacksmith.to_upgrade
+            options = {
+                # id, title, code
+                "1": (f"{colorama.Fore.GREEN + colorama.Style.BRIGHT}Yes{colorama.Fore.RESET + colorama.Style.RESET_ALL}", "Y"),
+                "2": (f"{colorama.Fore.RED + colorama.Style.BRIGHT}No{colorama.Fore.RESET + colorama.Style.RESET_ALL}", "N")
+            }
+            print(f"Are you sure you want to upgrade {colorama.Fore.MAGENTA + colorama.Style.BRIGHT}{item.name}{colorama.Fore.RESET + colorama.Style.RESET_ALL}?")
+            for k, v in options.items():
+                print(f"{colorama.Fore.BLUE}{k}{colorama.Fore.RESET}: {v[0]}")
+            solution = options.get(input("Select one option: ").lower().strip())
+            if not solution: return
+            if solution[1] == "Y":
+                if not item.upgrade():
+                    print("You can't upgrade this item.")
+                    input("Press enter to continue...")
+            backend.SectionManager.init_section(self.system, "Blacksmith")
+
+    class Directory(backend.Section):
+        items: List[Tuple[str, backend.System.ItemProtocol]]
+
+        def init(self) -> None:
+            super().init()
+            self.blacksmith: "BlacksmithSection" = SectionLibrary.sections["Blacksmith"]
+
+        def on_render(self) -> None:
+            super().on_render()
+            self.blacksmith.render_title()
+            points = int(self.system.player.sys.points)
+            print()
+            self.blacksmith.render_points(points)
+            self.blacksmith.render_count(len(self.items))
+            print()
+            print(f"{colorama.Fore.RED}0{colorama.Fore.RESET}: Go back")
+            options = self.blacksmith.render_items(points, self.items)
+            solution = input("Select one item you want to upgrade: ").lower().strip()
+            if solution == "0": 
+                backend.SectionManager.init_section(self.system, "Blacksmith")
+                return
+            solution = options.get(solution)
+            if not solution: return
+            self.blacksmith.to_upgrade = solution
+            backend.SectionManager.init_section(self.system, "Blacksmith.Popup")
+    
+    class Weapons(Directory):
+        def init(self) -> None:
+            super().init()
+            self.items = [(n, i) for n, i in ItemLibrary.weapons.items() if i in self.system.player.sys.items and i.owner == self.system.player.sys]
+
+    class Armor(Directory): # Caching the items into a list that helps to unpack does also help with performance.
+        def init(self) -> None:
+            super().init()
+            self.items = [(n, i) for n, i in ItemLibrary.armor.items() if i in self.system.player.sys.items and i.owner == self.system.player.sys]
+    
+    def init(self) -> None:
+        super().init()
+        self.to_upgrade: Optional[backend.System.ItemProtocol] = None
+        self.items: int = list(i for i in ItemLibrary.items if i in self.system.player.sys.items and i.owner == self.system.player.sys)
+
+    def on_render(self) -> None:
+        super().on_render()
+
+        if not self.system.player: # We are not initialized yet!
+            backend.SectionManager.init_section(self.system, "Menu")
+            return
+
+        self.render_title()
+        print()
+        self.render_points(int(self.system.player.sys.points))
+        self.render_count(len(self.items))
+        print()
+        options = {
+            # id, title, section
+            "1": (f"{colorama.Fore.RED}Weapons{colorama.Fore.RESET}", "Blacksmith.Weapons"),
+            "2": (f"{colorama.Fore.GREEN}Armor{colorama.Fore.RESET}", "Blacksmith.Armor")
+        }
+        print(f"{colorama.Fore.RED}0{colorama.Fore.RESET}: Go back")
+        for k, v in options.items():
+            print(f"{colorama.Fore.BLUE}{k}{colorama.Fore.RESET}: {v[0]}")
+        solution = input("Select one directory: ").lower().strip()
+        if solution == "0": 
+            backend.SectionManager.init_section(self.system, "Menu")
+            return
+        solution = options.get(solution)
+        if not solution: return
+        backend.SectionManager.init_section(self.system, solution[1])
+
+    def render_title(self) -> None:
+        print(f"---- {{{colorama.Fore.GREEN + colorama.Style.BRIGHT}BLACKSMITH{colorama.Fore.RESET + colorama.Style.RESET_ALL}}} ----")
+    
+    def render_points(self, points: int) -> None:
+        print(f"Your points: {colorama.Fore.YELLOW + colorama.Style.BRIGHT}{points}p{colorama.Fore.RESET + colorama.Style.RESET_ALL}")
+    
+    def render_count(self, count: int) -> None:
+        print(f"Items for upgrade: {count}")
+    
+    def render_items(self, points: int, items: List[Tuple[str, backend.System.ItemProtocol]]) -> Dict[str, backend.System.ItemProtocol]:
+        processed = {}
+        for i, (name, item) in enumerate(items):
+            if not item in self.system.player.sys.items or not item.owner == self.system.player.sys: continue
+            print(f"{colorama.Fore.BLUE}{i+1}{colorama.Fore.RESET}: {colorama.Fore.MAGENTA}{name}{colorama.Fore.RESET} [{(colorama.Fore.GREEN if points >= item.upgrade_cost else colorama.Fore.RED) + colorama.Style.BRIGHT}{item.upgrade_cost}p{colorama.Fore.RESET + colorama.Style.RESET_ALL}] - {colorama.Fore.BLUE}{item.desc}{colorama.Fore.RESET}")
+            processed[str(i+1)] = item
+        return processed
 
 class GameSection(backend.Section):
     class Directory(backend.Section):
@@ -382,10 +492,10 @@ class GameSection(backend.Section):
     
     class Loss(backend.Section):
         title = f"{colorama.Fore.RED}Oh no! You lost rewards: {colorama.Fore.RESET}"
-        loss = True
         def init(self) -> None:
             super().init()
             self.rewards = self.system.environment.rewards
+            self.loss = True
 
     def init(self) -> None:
         if not self.system.player: 
@@ -509,6 +619,10 @@ class SectionLibrary:
         "Inventory": InventorySection(),
         "Inventory.Weapons": InventorySection.Weapons(),
         "Inventory.Armor": InventorySection.Armor(),
+        "Blacksmith": BlacksmithSection(),
+        "Blacksmith.Popup": BlacksmithSection.Popup(),
+        "Blacksmith.Weapons": BlacksmithSection.Weapons(),
+        "Blacksmith.Armor": BlacksmithSection.Armor(),
         "Game": GameSection(),
         "Game.Success": GameSection.Success(),
         "Game.Loss": GameSection.Loss()

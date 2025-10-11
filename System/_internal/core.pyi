@@ -138,6 +138,14 @@ class ItemProtocol(Protocol):
     def critical_damage(self) -> float:
         """The critical damage of this item."""
         ...
+    @property
+    def upgrades(self) -> int:
+        """The number of upgrades on this item."""
+        ...
+    @property
+    def upgrade_cost(self) -> int:
+        """The cost for the next upgrade."""
+        ...
     def damage(self, damage: int) -> bool:
         """Damage this item."""
         ...
@@ -149,6 +157,9 @@ class ItemProtocol(Protocol):
         ...
     def buy(self, player: Player) -> bool:
         """Buy this item as the given player."""
+        ...
+    def upgrade(self) -> bool:
+        """Upgrade this item as the owning player."""
         ...
 
 class Handler(Protocol):

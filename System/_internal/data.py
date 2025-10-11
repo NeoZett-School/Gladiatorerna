@@ -32,3 +32,4 @@ class ItemData(TypedDict):
     attack_range: Tuple[int, int]
     critical_chance: float
     critical_damage: float
+    upgrades: int
