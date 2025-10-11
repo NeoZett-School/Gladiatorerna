@@ -108,7 +108,6 @@ class CONFIG: # We can configure this game here
             "base_attack": 10,
             "critical_chance": 0.5,
             "critical_factor": 1.0,
-            "exp": 0.35
         },
         "Tessa": {
             "name": "Trickedy Tessa", # This is only the displayed name
