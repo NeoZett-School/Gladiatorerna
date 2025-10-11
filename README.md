@@ -1,15 +1,45 @@
-# Gladiatorerna
+# 🏛️ Gladiatorerna  
 
-Follow us on our progress! This is for a course.
+Follow our journey as we bring the ancient arena back to life — this project is part of a programming course, but also a battle for glory. ⚔️  
 
-### What is this about?
+---
 
-In this project, we have been given a task to recreate the once popular game of the gladiators in ancient [*__Rome__*](https://sv.wikipedia.org/wiki/Rome). To do so, we've been given the python programming language, a computer and a programming environment. This game will be made as a text-based game, but I still believe you might like it.
+## 🧠 What Is This About?  
 
-What it has to offer:
+In this project, we’ve been tasked with recreating the once-popular gladiator games of ancient [**Rome**](https://sv.wikipedia.org/wiki/Rome).  
+Armed only with **Python**, a computer, and an **IDE**, we’re building a **text-based gladiator game** — simple in form, but rich in challenge and spirit.  
 
-- **`Characters`**: Play as different characters, specialized at different game-styles.
-- **`Difficulties`**: Comes with easy, normal and hard. Choose wheter you want to feel the game, or fight for survival.
-- **`Touch of nature`**: Fight against lions, bears or barbarians! Easily extend the game to your own liking.
-- **`Political`**: You may have a second chance. Only if the emperor says so.
-- **`Be the strongest`**: Buy new and flashy weapons. Nothing is overpowered with a dust of chance sprinkled over it.
+---
+
+## 🎮 What It Has to Offer  
+
+- **`Characters`** — Play as different fighters, each with unique traits and fighting styles.  
+- **`Difficulties`** — Choose between *Easy*, *Normal*, or *Hard*. Feel the thrill — or fight for survival.  
+- **`Touch of Nature`** — Face wild beasts such as lions, bears, or barbarians! The system is easily extendable for new foes.  
+- **`Political`** — Sometimes, fate is in your favor… if the emperor decides to spare you. 🏺  
+- **`Be the Strongest`** — Earn gold and buy new weapons and armor. Nothing is overpowered — just a bit of luck and skill.  
+
+---
+
+## ⚙️ Tech Info  
+
+- **Language:** Python 🐍  
+- **Type:** Text-based adventure / combat game  
+- **Development Status:** Early prototype (course project)  
+
+---
+
+## 🏗️ Current Focus  
+
+We’re currently working on **save files** and fine-tuning the gameplay loop for version **1.0**.  
+You can check our progress in the [Upcoming Updates issue](./issues).  
+
+---
+
+## 💬 Feedback  
+
+This is a learning project, so any feedback, suggestions, or comments are welcome!  
+
+---
+
+> *Ave, developer! Step into the arena and code your way to victory.*  
