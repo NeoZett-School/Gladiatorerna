@@ -32,7 +32,7 @@ Armed only with **Python**, a computer, and an **IDE**, we’re building a **tex
 ## 🏗️ Current Focus  
 
 We’re currently working on **save files** and fine-tuning the gameplay loop for version **1.0**.  
-You can check our progress in the [Upcoming Updates issue](./issues).  
+You can check our progress in the [Upcoming Updates issue](https://github.com/neoostlundzetterberg-svg/Gladiatorerna/issues/1).
 
 ---
 
