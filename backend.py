@@ -1,42 +1,100 @@
 # What we can't see on screen
 
-from typing import List, Dict, Optional, Any, Self
+from typing import Tuple, List, Dict, Optional, Any, Self, TypedDict
 from enum import Enum, auto
 from names import generate_name
 from story import generate_story
 import System
 import random
 
+class DifficultyData(TypedDict):
+    desc: str
+    enemy_max_health_factor: float
+    enemy_base_attack: int
+    enemy_critical_factor: float
+    enemy_encounters: Dict[int, Tuple[int, int]] 
+    # enemy encounters: What level for what levels of the enemy to occur
+    rewards: Dict[int, Dict[str, Any]] 
+    # rewards: first of, the level to reach, second, dict with string identifiers 
+    # for item to be increased by it's value.
+    # These are also the loses (25% of these) if you lose.
+
 class CONFIG: # We can configure this game here
-    difficulty_data: Dict[str, Dict[str, Any]] = { 
+    difficulty_data: Dict[str, DifficultyData] = { 
         # These are the real effects of the difficulty,
         # except for the other implementations that are 
         # dependent on what difficulty it is. 
         # (Then we use the enum directly)
         "Easy": {
             "desc": "The easiest. If you just want to try the experience.",
-            "enemy_max_health_factor": 0.5
+            "enemy_max_health_factor": 0.75,
+            "enemy_base_attack": 8,
+            "enemy_critical_factor": 0.75,
+            "rewards": {
+                2: {"points": 50},
+                3: {"points": 100}
+            },
+            "enemy_encounters": {
+                1: (1, 3),
+                2: (2, 4),
+                3: (1, 6),
+                4: (2, 8),
+                5: (3, 9)
+            }
         },
         "Normal": {
             "desc": "Normal. Use this to get some action!",
-            "enemy_max_health_factor": 1.0
+            "enemy_max_health_factor": 1.0,
+            "enemy_base_attack": 10,
+            "enemy_critical_factor": 1.0,
+            "rewards": {
+                2: {"points": 10},
+                3: {"points": 30}
+            },
+            "enemy_encounters": {
+                1: (1, 3),
+                2: (2, 4),
+                3: (1, 6),
+                4: (2, 8),
+                5: (3, 9)
+            }
         },
         "Hard": {
             "desc": "The challenge is to beat this!",
-            "enemy_max_health_factor": 1.5
+            "enemy_max_health_factor": 1.25,
+            "enemy_base_attack": 15,
+            "enemy_critical_factor": 1.15,
+            "rewards": {
+                2: {"points": 5},
+                3: {"points": 15}
+            },
+            "enemy_encounters": {
+                1: (1, 5),
+                2: (2, 8),
+                3: (1, 9),
+                4: (2, 14),
+                5: (3, 15)
+            }
         }
     }
     characters: Dict[str, System.PlayerData] = {
         "Jim": { # The casual baddie
             "name": "Jim",
             "desc": "The default male protagonist.",
-            "exp": 0.0,
-            "level": 1,
             "max_health": 100,
             "healing": 1.0,
             "base_attack": 10,
             "critical_chance": 0.5,
             "critical_factor": 1.0
+        },
+        "Tessa": {
+            "name": "Trickedy Tessa",
+            "desc": "The female protagonist.",
+            "max_health": 150, # We're tough!
+            "healing": 0.75,
+            "base_attack": 5,
+            "critical_chance": 0.65,
+            "critical_factor": 0.95,
         }
     }
 
@@ -46,7 +104,7 @@ class Difficulty(Enum): # enums allow setting a state
     Hard = auto()
 
     @property
-    def data(self) -> Dict[str, Any]: # We can get the corresponding data
+    def data(self) -> DifficultyData: # We can get the corresponding data
         return CONFIG.difficulty_data.get(self.name, {})
     
     @classmethod
@@ -67,7 +125,11 @@ class Enemy(System.Handler): # The full enemy implementation.
         self.enemy: System.Enemy = System.Enemy({
             "name": name,
             "level": level,
-            "max_health": 100 * (1 + level * 0.25) * difficulty.data.get("enemy_max_health_factor" ,1.0)
+            "max_health": 100 * (1 + level * 0.25) * difficulty.data.get("enemy_max_health_factor" ,1.0),
+            "healing": 1 + level * 0.1,
+            "base_attack": difficulty.data.get("enemy_base_attack", 10) + level,
+            "critical_chance": 0.5,
+            "critical_factor": difficulty.data.get("enemy_critical_factor", 1.0)
         })
 
     @classmethod
@@ -76,11 +138,22 @@ class Enemy(System.Handler): # The full enemy implementation.
 
 class Environment:
     # Here, we define the environment.
-    # f.e backstory, enemy, shop. 
-    # Anything, really.
-    def __init__(self, enemy: Enemy) -> Self:
+    # f.e backstory, enemy, rewards. 
+    # Anything in a fight.
+    def __init__(self, player: Player, enemy: Enemy, difficulty: Difficulty) -> Self:
+        self.player: Player = player
         self.enemy: Enemy = enemy
-        self.story: str = generate_story()
+        self.story: List[str] = generate_story()
+        self.rewards: Dict[str, Any] = difficulty.data.get("rewards", {}).get(player.player.level + 1, {})
+        self._story_index: int = 0
+    
+    @property
+    def next(self) -> str:
+        text = self.story[self._story_index]
+        self._story_index += 1
+        if self._story_index > len(self.story) - 1:
+            self._story_index = 0
+        return text
 
 class Section(System.Handler):
     handlers: List[System.Handler]

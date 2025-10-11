@@ -39,7 +39,7 @@ class Player:
     
     @property
     def level(self) -> int:
-        return int(self._data.get("level", 0))
+        return int(self._data.get("level", 1))
     
     @property
     def health(self) -> int:

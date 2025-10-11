@@ -43,7 +43,7 @@ class SettingsSection(backend.Section):
             "1": ("Difficulty", self.system.difficulty.name),
             "2": ("Character", self.system.char_name)
         }
-        print(f"{colorama.Fore.BLACK}0{colorama.Fore.RESET}: Go back")
+        print(f"{colorama.Fore.RED}0{colorama.Fore.RESET}: Go back")
         for k, v in options.items():
             print(f"{colorama.Fore.BLUE}{k}{colorama.Fore.RESET}: {colorama.Fore.YELLOW}{v[0]}{colorama.Fore.RESET} [{colorama.Fore.MAGENTA}{v[1]}{colorama.Fore.RESET}]")
         solution = input("Select one setting to change: ").lower().strip()
@@ -90,6 +90,7 @@ class ShopSection(backend.Section):
             print()
             self.shop.render_points(points)
             print()
+            print(f"{colorama.Fore.RED}0{colorama.Fore.RESET}: Go back")
             options = self.shop.render_items(points, self.items)
             solution = input("Select one item you want to buy: ").lower().strip()
             if solution == "0": 
@@ -102,10 +103,10 @@ class ShopSection(backend.Section):
                 input("Press enter to continue...")
     
     class Weapons(Directory):
-        items: List[Tuple[str, backend.System.ItemProtocol]] = [(n, i) for n, i in ItemLibrary.weapons.items()]
+        items = [(n, i) for n, i in ItemLibrary.weapons.items()]
 
     class Armor(Directory): # Caching the items into a list that helps to unpack does also help with performance.
-        items: List[Tuple[str, backend.System.ItemProtocol]] = [(n, i) for n, i in ItemLibrary.armor.items()]
+        items = [(n, i) for n, i in ItemLibrary.armor.items()]
 
     def on_render(self) -> None:
         super().on_render()
@@ -121,7 +122,7 @@ class ShopSection(backend.Section):
             "1": (f"{colorama.Fore.RED}Weapons{colorama.Fore.RESET}", "Weapons"),
             "2": (f"{colorama.Fore.GREEN}Armor{colorama.Fore.RESET}", "Armor")
         }
-        print(f"{colorama.Fore.BLACK}0{colorama.Fore.RESET}: Go back")
+        print(f"{colorama.Fore.RED}0{colorama.Fore.RESET}: Go back")
         for k, v in options.items():
             print(f"{colorama.Fore.BLUE}{k}{colorama.Fore.RESET}: {v[0]}")
         solution = input("Select one directory: ").lower().strip()
@@ -140,7 +141,6 @@ class ShopSection(backend.Section):
     
     def render_items(self, points: int, items: List[Tuple[str, backend.System.ItemProtocol]]) -> Dict[str, backend.System.ItemProtocol]:
         processed = {}
-        print(f"{colorama.Fore.BLACK}0{colorama.Fore.RESET}: Go back")
         for i, (name, item) in enumerate(items):
             if item in self.system.player.player.items or item.owner == self.system.player.player: continue
             print(f"{colorama.Fore.BLUE}{i+1}{colorama.Fore.RESET}: {colorama.Fore.MAGENTA}{name}{colorama.Fore.RESET} [{(colorama.Fore.GREEN if points > item.cost else colorama.Fore.RED) + colorama.Style.BRIGHT}{item.cost}p{colorama.Fore.RESET + colorama.Style.RESET_ALL}] - {colorama.Fore.BLUE}{item.desc}{colorama.Fore.RESET}")
@@ -155,7 +155,10 @@ class GameSection(backend.Section):
 
     def on_render(self) -> None:
         super().on_render()
-        ...
+        print(f"---- {{{colorama.Fore.CYAN + colorama.Style.BRIGHT}GLADIATORERNA{colorama.Fore.RESET + colorama.Style.RESET_ALL}}} ----")
+        print()
+        print(f"{colorama.Fore.RED}0{colorama.Fore.RESET}: Go back")
+        input()
 
 class SectionLibrary: 
     # We create all sections and load them one by one.

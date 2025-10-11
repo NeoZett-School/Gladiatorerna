@@ -19,6 +19,9 @@ class PlayerData(TypedDict):
     critical_chance: float
     critical_factor: float
 
+    # Do not touch these.
+    points: Optional[int]
+
 class ItemData(TypedDict):
     name: str
     desc: str
