@@ -31,15 +31,17 @@ class MenuSection(backend.Section):
         options = {
             # id, title, section
             "1": (f"{colorama.Fore.GREEN}Start{colorama.Fore.RESET}", "Game"),
-            "2": (f"{colorama.Fore.CYAN}Settings{colorama.Fore.RESET}", "Settings"),
-            "3": (f"{colorama.Fore.YELLOW}Intel{colorama.Fore.RESET}", "Intel")
+            "2": (f"{colorama.Fore.CYAN}Saves{colorama.Fore.RESET}", "Save"),
+            "3": (f"{colorama.Fore.BLUE}About{colorama.Fore.RESET}", "About"),
+            "4": (f"{colorama.Fore.CYAN}Settings{colorama.Fore.RESET}", "Settings"),
+            "5": (f"{colorama.Fore.YELLOW}Intel{colorama.Fore.RESET}", "Intel")
         }
-        exit_id = "4"
+        exit_id = "6"
         if self.system.player: # If the game has initialized, we can safely reveal the shop!
-            options["4"] = (f"{colorama.Fore.MAGENTA}Shop{colorama.Fore.RESET}", "Shop")
-            options["5"] = (f"{colorama.Fore.LIGHTBLUE_EX}Blacksmith{colorama.Fore.RESET}", "Blacksmith")
-            options["6"] = (f"{colorama.Fore.CYAN + colorama.Style.BRIGHT}Inventory{colorama.Fore.RESET + colorama.Style.RESET_ALL}", "Inventory")
-            exit_id = "7"
+            options["6"] = (f"{colorama.Fore.MAGENTA}Shop{colorama.Fore.RESET}", "Shop")
+            options["7"] = (f"{colorama.Fore.LIGHTBLUE_EX}Blacksmith{colorama.Fore.RESET}", "Blacksmith")
+            options["8"] = (f"{colorama.Fore.CYAN + colorama.Style.BRIGHT}Inventory{colorama.Fore.RESET + colorama.Style.RESET_ALL}", "Inventory")
+            exit_id = "9"
         options[exit_id] = (f"{colorama.Fore.RED}Exit{colorama.Fore.RESET}", "Exit")
         for k, v in options.items():
             print(f"{colorama.Fore.BLUE}{k}{colorama.Fore.RESET}: {v[0]}")
@@ -219,6 +221,8 @@ class InventorySection(backend.Section):
             super().on_render()
             self.inv.render_title()
             print()
+            self.inv.render_count(len(self.items))
+            print()
             print(f"{colorama.Fore.RED}0{colorama.Fore.RESET}: Go back")
             options = self.inv.render_items(self.items)
             solution = input("Select one item you want to change: ").lower().strip()
@@ -230,10 +234,14 @@ class InventorySection(backend.Section):
             solution.equipped = not solution.equipped
     
     class Weapons(Directory):
-        items = [(n, i) for n, i in ItemLibrary.weapons.items()]
+        def init(self) -> None:
+            super().init()
+            self.items = [(n, i) for n, i in ItemLibrary.weapons.items() if i in self.system.player.sys.items and i.owner == self.system.player.sys]
 
     class Armor(Directory): # Caching the items into a list that helps to unpack does also help with performance.
-        items = [(n, i) for n, i in ItemLibrary.armor.items()]
+        def init(self) -> None:
+            super().init()
+            self.items = [(n, i) for n, i in ItemLibrary.armor.items() if i in self.system.player.sys.items and i.owner == self.system.player.sys]
 
     def on_render(self) -> None:
         super().on_render()
@@ -244,7 +252,7 @@ class InventorySection(backend.Section):
 
         self.render_title()
         print()
-        self.render_count()
+        self.render_count(len(self.system.player.sys.items))
         print()
         options = {
             # id, title, section
@@ -265,8 +273,8 @@ class InventorySection(backend.Section):
     def render_title(self) -> None:
         print(f"---- {{{colorama.Fore.CYAN + colorama.Style.BRIGHT}Inventory{colorama.Fore.RESET + colorama.Style.RESET_ALL}}} ----")
     
-    def render_count(self) -> None:
-        print(f"Your items: {colorama.Fore.YELLOW + colorama.Style.BRIGHT}{len(self.system.player.sys.items)}{colorama.Fore.RESET + colorama.Style.RESET_ALL}")
+    def render_count(self, count: int) -> None:
+        print(f"Your items: {colorama.Fore.YELLOW + colorama.Style.BRIGHT}{count}{colorama.Fore.RESET + colorama.Style.RESET_ALL}")
 
     def render_items(self, items: List[Tuple[str, backend.System.ItemProtocol]]) -> Dict[str, backend.System.ItemProtocol]:
         processed = {}
@@ -432,6 +440,54 @@ class BlacksmithSection(backend.Section):
             print(f"{colorama.Fore.BLUE}{i+1}{colorama.Fore.RESET}: {colorama.Fore.MAGENTA}{name}{colorama.Fore.RESET} [{(colorama.Fore.GREEN if points >= item.upgrade_cost else colorama.Fore.RED) + colorama.Style.BRIGHT}{item.upgrade_cost}p{colorama.Fore.RESET + colorama.Style.RESET_ALL}] - {colorama.Fore.BLUE}{item.desc}{colorama.Fore.RESET}")
             processed[str(i+1)] = item
         return processed
+
+class AboutSection(backend.Section):
+    pages: List[List[str]] = [
+        [
+            "Gladiatorerna",
+            "",
+            "A game made in reality, in movies, in games.",
+            "This game will let you take a trip into this",
+            "very special place of ancient Rome."
+        ],
+        [
+            "By Neo Zetterberg",
+            "",
+            "Link: https://github.com/neoostlundzetterberg-svg/Gladiatorerna"
+        ]
+    ]
+
+    def init(self) -> None:
+        super().init()
+        self.index: int = 0
+
+    @property
+    def page(self) -> List[str]:
+        return self.pages[self.index]
+    
+    def on_render(self) -> None:
+        super().on_update()
+        for text in self.page:
+            print(text)
+        print()
+        print(f"{colorama.Fore.RED}0{colorama.Fore.RESET}: Go back")
+        print(f"{colorama.Fore.BLUE}1{colorama.Fore.RESET}: Next page")
+        solution = input("Select one option: ").lower().strip()
+        if solution == "0": 
+            backend.SectionManager.init_section(self.system, "Menu")
+            return
+        elif solution == "1":
+            self.index += 1
+            if self.index > len(self.pages) - 1:
+                self.index = 0
+            return
+
+class SaveSection(backend.Section):
+    def on_render(self) -> None:
+        super().on_render()
+        print("This section is still under construction...")
+        input()
+        backend.SectionManager.init_section(self.system, "Menu")
 
 class GameSection(backend.Section):
     class Directory(backend.Section):
@@ -605,7 +661,6 @@ class GameSection(backend.Section):
             processed[str(i+1)] = item
         return processed
 
-
 class SectionLibrary: 
     # We create all sections and load them one by one.
     sections: Dict[str, backend.Section] = {
@@ -623,6 +678,8 @@ class SectionLibrary:
         "Blacksmith.Popup": BlacksmithSection.Popup(),
         "Blacksmith.Weapons": BlacksmithSection.Weapons(),
         "Blacksmith.Armor": BlacksmithSection.Armor(),
+        "About": AboutSection(),
+        "Save": SaveSection(),
         "Game": GameSection(),
         "Game.Success": GameSection.Success(),
         "Game.Loss": GameSection.Loss()
