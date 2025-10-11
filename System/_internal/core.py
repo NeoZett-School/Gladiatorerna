@@ -17,7 +17,9 @@ __all__ = (
 )
 
 def clear_screen():
-    os.system("cls")
+    if os.name == "nt": # Windows
+        os.system("cls")
+    else: os.system("clear")
 
 class Player:
     def __init__(self, _data: Optional[PlayerData] = None) -> Self:
