@@ -9,6 +9,8 @@ Follow our journey as we bring the ancient arena back to life — this project i
 In this project, we’ve been tasked with recreating the once-popular gladiator games of ancient [**Rome**](https://sv.wikipedia.org/wiki/Rome).  
 Armed only with **Python**, a computer, and an **IDE**, we’re building a **text-based gladiator game** — simple in form, but rich in challenge and spirit.  
 
+Attune to new updates and see our wiki: [Gitub Wiki page](https://github.com/neoostlundzetterberg-svg/Gladiatorerna/wiki)
+
 ---
 
 ## 🎮 What It Has to Offer  
