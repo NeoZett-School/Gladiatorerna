@@ -31,7 +31,7 @@ We removed `Political`. You might have noticed that this game is more about figh
 
 ## 🏗️ Current Focus  
 
-We’re currently working on **save files** and fine-tuning the gameplay loop for version **1.0**.  
+We’re currently working on **in-game content** and fine-tuning other existing gameplay for version **1.0**.  
 You can check our progress in the [Upcoming Updates issue](https://github.com/neoostlundzetterberg-svg/Gladiatorerna/issues/1).
 
 ---
