@@ -3,10 +3,11 @@ import colorama
 
 print("Loading...", end="\r")
 
-from typing import Tuple, List, Dict, Optional, Any
+from typing import Tuple, List, Dict, Optional, Self, Any
 from items import ItemLibrary
 import backend
 import random
+import os
 
 if not __name__ == "__main__":
     exit()
@@ -483,11 +484,62 @@ class AboutSection(backend.Section):
             return
 
 class SaveSection(backend.Section):
+    class Save(backend.Section):
+        def on_render(self) -> None:
+            super().on_render()
+            print(f"{colorama.Fore.CYAN + colorama.Style.BRIGHT}< NEW SAVE FILE >{colorama.Fore.RESET + colorama.Style.RESET_ALL}")
+            file = input("Input a name for this file: ").strip()
+            if not file.endswith(".json"): file = file+".json"
+            data = self.system.player.sys._data
+
+            items = self.system.player.sys.items
+            data["items"] = { # Most compatible, could also do {dict_1} | {dict_2}
+                i.name: {**{"equipped": i.equipped}, **i._data}
+                for i in items
+            }
+
+            self.system.save_handler.save(data, file)
+            backend.SectionManager.init_section(self.system, "Save")
+
     def on_render(self) -> None:
         super().on_render()
-        print("This section is still under construction...")
-        input()
-        backend.SectionManager.init_section(self.system, "Menu")
+        print(f"---- {{{colorama.Fore.CYAN}SAVE FILES{colorama.Fore.RESET}}}")
+        print()
+        if self.system.player: print(f"{colorama.Fore.BLUE}1{colorama.Fore.RESET}: Save")
+        options = self.render_saves()
+        for k, v in options.items():
+            print(f"{colorama.Fore.BLUE}{k}{colorama.Fore.RESET}: {colorama.Fore.YELLOW}{v[0]}{colorama.Fore.RESET}")
+        print(f"{colorama.Fore.RED}0{colorama.Fore.RESET}: Go back")
+        solution = input("Select one option: ").lower().strip()
+        if solution == "0":
+            backend.SectionManager.init_section(self.system, "Menu")
+            return
+        elif solution == "1" and self.system.player:
+            backend.SectionManager.init_section(self.system, "Save.Save")
+            return
+        solution = options.get(solution)
+        if not solution: return
+        player_data = self.system.save_handler.load(solution[1])
+        player = backend.Player(player_data.get("name", "Unknown"))
+
+        items = player_data.pop("items")
+        for name, item_data in items.items():
+            item = ItemLibrary.inventory_by_name[name]
+            player.sys.items.append(item)
+            item.owner = player.sys
+            item.equipped = item_data.pop("equipped", True)
+            item._data = item_data
+
+        player.sys._data = player_data
+        self.system.player = player
+    
+    def render_saves(self) -> Dict[str, Tuple[str, str]]:
+        processed = {}
+        for i, file in enumerate(self.system.save_handler.files):
+            # id, title, path
+            last_saved = self.system.save_handler.last_save.get(file, "Never")
+            processed[str(i+2)] = (f"{os.path.splitext(os.path.basename(file))[0]} - last saved: {last_saved}", file)
+        return processed
 
 class GameSection(backend.Section):
     class Directory(backend.Section):
@@ -535,6 +587,8 @@ class GameSection(backend.Section):
             )
             player = self.system.player.sys
             player._data["health"] = player._data["max_health"]
+            for item in player.items:
+                item._data["health"] = player._data["max_health"]
             if solution[1] == "N":
                 backend.SectionManager.init_section(self.system, "Menu")
                 return
@@ -552,9 +606,14 @@ class GameSection(backend.Section):
             super().init()
             self.rewards = self.system.environment.rewards
             self.loss = True
+    
+    def __init__(self) -> Self:
+        super().__init__()
+        self.initialized: bool = False
 
     def init(self) -> None:
-        if not self.system.player: 
+        if not self.initialized: 
+            self.initialized = True
             # Some options are unchangeable after starting the game, like the character. 
             # Whilst some are only initialy created once.
 
@@ -599,6 +658,7 @@ class GameSection(backend.Section):
         print()
         print(self.enemy_attack)
         print()
+        print("What do you do?")
         options = self.render_items()
         print(f"{colorama.Fore.RED}0{colorama.Fore.RESET}: Go back")
         solution = input("Select one option: ").lower().strip()
@@ -680,6 +740,7 @@ class SectionLibrary:
         "Blacksmith.Armor": BlacksmithSection.Armor(),
         "About": AboutSection(),
         "Save": SaveSection(),
+        "Save.Save": SaveSection.Save(),
         "Game": GameSection(),
         "Game.Success": GameSection.Success(),
         "Game.Loss": GameSection.Loss()

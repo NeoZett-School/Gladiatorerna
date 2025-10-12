@@ -5,6 +5,7 @@ from enum import Enum, auto
 from names import generate_name
 from story import generate_story
 from items import ItemLibrary
+from Saves import SaveHandler
 import System
 import random
 
@@ -245,8 +246,10 @@ class Game(System.System):
     def __init__(self) -> Self:
         super().__init__()
 
+        self.save_handler: SaveHandler = SaveHandler()
         self.difficulty: Difficulty = Difficulty.Normal
         self.char_name: str = "Jim" 
+        self.save_file: str = ""
         self.player: Optional[Player] = None # Initalized later.
         self.environment: Optional[Environment] = None
     

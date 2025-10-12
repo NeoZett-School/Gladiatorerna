@@ -49,7 +49,7 @@ class Player:
     
     @property
     def max_health(self) -> int:
-        return int(self._data.get("max_health", 100) + sum(i.max_health for i in self.items if i.equipped and i.itype == ItemType.SHIELD) * (1 + self.level * 0.25))
+        return int(self._data.get("max_health", 100) * (1 + self.level * 0.25)) + sum(i.max_health for i in self.items if i.equipped and i.itype == ItemType.SHIELD)
     
     @property
     def healing(self) -> float:
@@ -159,7 +159,7 @@ class ItemProtocol(Protocol):
     
     @property
     def upgrade_cost(self) -> int:
-        return int((self.cost if self.cost > 0 else 2) * self.upgrades * 1.5)
+        return int((self.cost if self.cost > 0 else 9) * (1 + self.upgrades) * 1.5)
     
     def damage(self, damage: int) -> None:
         new_health = self.health - damage

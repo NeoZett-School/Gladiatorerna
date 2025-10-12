@@ -88,6 +88,13 @@ class ItemLibrary:
     weapons: Dict[str, ItemProtocol] = {i.name: i for i in items if i.itype == ItemType.ATTACK}
     armor: Dict[str, ItemProtocol] = {i.name: i for i in items if i.itype == ItemType.SHIELD}
 
+    all_by_name: Dict[str, ItemProtocol] = {
+        i.name: i.__class__ for i in items
+    }
+    inventory_by_name: Dict[str, ItemProtocol] = {
+        i.name: i for i in items
+    }
+
     @classmethod
     def generate_weapon(cls) -> ItemProtocol:
         return random.choice((
