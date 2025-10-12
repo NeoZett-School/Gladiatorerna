@@ -782,7 +782,7 @@ class GameSection(backend.Section):
                          f"{" (critical)" if player_critical else ""}"
             if player_damage == 0: player_log = f"You tried using: {colorama.Fore.MAGENTA}{solution.name}{colorama.Fore.RESET}. It is broken."
         else: player_log = "You did nothing."
-        enemy_weapon = random.choices(enemy.equipped_weapons, list(w.health for w in enemy.equipped_weapons))[0]
+        enemy_weapon = random.choices(enemy.equipped_weapons, list(abs(w.health) for w in enemy.equipped_weapons))[0]
         if (max(enemy_weapon.health - 10, 0) / enemy_weapon.max_health) * self.system.difficulty.data.get("enemy_attack_chance", 0.85) > random.uniform(0, 1): # We'll actually make it less likely for it to hit when the weapon has low health.
             enemy_critical, enemy_damage = enemy_weapon.use(player)
             enemy_log = f"Enemy attacked using {colorama.Fore.MAGENTA}{enemy_weapon.name}{colorama.Fore.RESET}, dealing {colorama.Fore.RED}{enemy_damage}{colorama.Fore.RESET} damage" \
