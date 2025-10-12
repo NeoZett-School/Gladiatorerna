@@ -4,19 +4,19 @@ import colorama
 print("Loading...", end="\r")
 
 from typing import Tuple, List, Dict, Optional, Self, Any
-from items import ItemLibrary
-import backend
+from items import ItemLibrary # Import the item library
+import backend # Import the backend
 import random
 import os
 
 if not __name__ == "__main__":
-    exit()
+    exit() # If this file was not run directly, we can simply exit like normal before anything get run.
 
-colorama.init()
+colorama.init() # Initialize colorama
 
-class MenuSection(backend.Section):
-    def on_render(self) -> None:
-        super().on_render()
+class MenuSection(backend.Section): # We create a section for the menu
+    def on_render(self) -> None: # On every render, we do...
+        super().on_render() # Firstly, run the internal functionality from the parenting class
         print(f"Welcome to {colorama.Fore.CYAN + colorama.Style.BRIGHT}Gladiatorerna{colorama.Fore.RESET + colorama.Style.RESET_ALL}!")
         if not self.system.player:
             print()
@@ -49,13 +49,13 @@ class MenuSection(backend.Section):
         solution = options.get(input("Select one option: ").lower().strip())
         if not solution: return
 
-        if solution[1] == "Exit":
+        if solution[1] == "Exit": # Exit if we say so.
             self.system.quit()
             return
         
         backend.SectionManager.init_section(self.system, solution[1])
 
-class SettingsSection(backend.Section):
+class SettingsSection(backend.Section): # Settings.
     def on_render(self) -> None:
         super().on_render()
         print("Options:")
@@ -498,6 +498,8 @@ class SaveSection(backend.Section):
                 for i in items
             }
 
+            data["difficulty"] = self.system.difficulty.name
+
             self.system.save_handler.save(data, file)
             backend.SectionManager.init_section(self.system, "Save")
 
@@ -520,6 +522,9 @@ class SaveSection(backend.Section):
         solution = options.get(solution)
         if not solution: return
         player_data = self.system.save_handler.load(solution[1])
+
+        self.system.difficulty = backend.Difficulty.get(player_data.pop("difficulty", "Normal"))
+
         player = backend.Player(player_data.get("name", "Unknown"))
 
         items = player_data.pop("items")

@@ -15,9 +15,9 @@ Armed only with **Python**, a computer, and an **IDE**, we’re building a **tex
 
 - **`Characters`** — Play as different fighters, each with unique traits and fighting styles.  
 - **`Difficulties`** — Choose between *Easy*, *Normal*, or *Hard*. Feel the thrill — or fight for survival.  
-- **`Touch of Nature`** — Face wild beasts such as lions, bears, or barbarians! The system is easily extendable for new foes.  
-- **`Political`** — Sometimes, fate is in your favor… if the emperor decides to spare you. 🏺  
+- **`Touch of Nature`** — Face wild beasts such as lions, bears, or barbarians! The system is easily extendable for new foes.   
 - **`Be the Strongest`** — Earn gold and buy new weapons and armor. Nothing is overpowered — just a bit of luck and skill.  
+We removed `Political`. You might have noticed that this game is more about fighting than it is about pleasing a emperor.
 
 ---
 
