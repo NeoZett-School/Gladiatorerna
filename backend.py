@@ -29,6 +29,7 @@ class CONFIG: # We can configure this game here
         # (Then we use the enum directly)
         "Easy": {
             "desc": "The easiest. If you just want to try the experience.",
+            "enemy_attack_chance": 0.7,
             "enemy_max_health_factor": 0.75,
             "enemy_healing": 1.25,
             "enemy_base_attack": 8,
@@ -53,6 +54,7 @@ class CONFIG: # We can configure this game here
         },
         "Normal": {
             "desc": "Normal. Use this to get some action!",
+            "enemy_attack_chance": 0.85,
             "enemy_max_health_factor": 1.0,
             "enemy_healing": 1.0,
             "enemy_base_attack": 10,
@@ -77,6 +79,7 @@ class CONFIG: # We can configure this game here
         },
         "Hard": {
             "desc": "The challenge is to beat this!",
+            "enemy_attack_chance": 1.15,
             "enemy_max_health_factor": 1.25,
             "enemy_healing": 0.75,
             "enemy_base_attack": 15,
