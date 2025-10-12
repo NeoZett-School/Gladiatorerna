@@ -628,10 +628,11 @@ class GameSection(backend.Section):
             # Whilst some are only initialy created once.
 
             # Setup the player
-            self.system.player = backend.Player(self.system.char_name)
-            player = self.system.player.sys
-            ItemLibrary.weapons["Wooden Sword"].buy(player)
-            ItemLibrary.armor["Wooden Armor"].buy(player)
+            if not self.system.player: # Only initialize the player if it isn't already there
+                self.system.player = backend.Player(self.system.char_name)
+                player = self.system.player.sys
+                ItemLibrary.weapons["Wooden Sword"].buy(player)
+                ItemLibrary.armor["Wooden Armor"].buy(player)
 
             # Load the initial environment
             difficulty = self.system.difficulty
