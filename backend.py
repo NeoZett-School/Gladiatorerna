@@ -172,14 +172,27 @@ class Enemy(System.Handler): # The full enemy implementation.
     def generate_enemy(cls, player: Player, difficulty: Difficulty) -> Self:
         min_level, max_level = difficulty.data.get("enemy_encounters", {}).get(player.sys.level, (1, 1))
         enemy = cls(generate_name(), random.randint(min_level, max_level), difficulty)
-        weapon = ItemLibrary.generate_weapon()
-        armor = ItemLibrary.generate_armor()
-        enemy.sys.items.append(weapon)
-        enemy.sys.items.append(armor)
-        weapon.owner = enemy.sys
-        armor.owner = enemy.sys
-        weapon.equipped = True
-        armor.equipped = True
+        player_weapons = list(i for i in player.sys.items if i.equipped and i.itype == System.ItemType.ATTACK)
+        player_armor = list(i for i in player.sys.items if i.equipped and i.itype == System.ItemType.SHIELD)
+        weapon_grades = list(i.upgrades for i in player_weapons)
+        armor_grades = list(i.upgrades for i in player_armor)
+        max_weapon_grade = max(weapon_grades)
+        max_armor_grade = max(armor_grades)
+        weapon_count = random.randint(1, len(player_weapons))
+        armor_count = random.randint(1, len(player_armor))
+        def add_item(i: System.ItemProtocol) -> None:
+            nonlocal enemy
+            enemy.sys.items.append(i)
+            i.owner = enemy.sys
+            i.equipped = True
+        for _ in range(weapon_count):
+            item = ItemLibrary.generate_weapon(enemy.sys.level)
+            item._data["upgrades"] = random.randint(1, max_weapon_grade)
+            add_item(item)
+        for _ in range(armor_count):
+            item = ItemLibrary.generate_armor(enemy.sys.level)
+            item._data["upgrades"] = random.randint(1, max_armor_grade)
+            add_item(item)
         return enemy
 
 class Environment:

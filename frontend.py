@@ -29,7 +29,7 @@ class MenuSection(backend.Section): # We create a section for the menu
             print("To do this, open the store. Then, you can go back into the battlefield, selecting"
                   f" {colorama.Fore.GREEN}Start{colorama.Fore.RESET}.")
         print()
-        print(f"Current time is: {datetime.datetime.now().strftime("%H:%M")}")
+        print(f"Current time is: {colorama.Fore.YELLOW}{datetime.datetime.now().strftime("%H:%M")}{colorama.Fore.RESET}")
         print()
         print("Where would you like to go?")
         options = {
@@ -684,7 +684,7 @@ class GameSection(backend.Section):
             if player_damage == 0: player_log = f"You tried using: {colorama.Fore.MAGENTA}{solution.name}{colorama.Fore.RESET}. It is broken."
         else: player_log = "You did nothing."
         enemy_weapon = random.choice(enemy.equipped_weapons)
-        if (max(enemy_weapon.health - 20, 0) / enemy_weapon.max_health) * 0.75 < random.uniform(0, 1): # We'll actually make it less likely for it to hit when the weapon has low health.
+        if (enemy_weapon.health / enemy_weapon.max_health) * 0.85 < random.uniform(0, 1): # We'll actually make it less likely for it to hit when the weapon has low health.
             enemy_critical, enemy_damage = enemy_weapon.use(player)
             enemy_log = f"Enemy attacked using {colorama.Fore.MAGENTA}{enemy_weapon.name}{colorama.Fore.RESET}, dealing {colorama.Fore.RED}{enemy_damage}{colorama.Fore.RESET} damage" \
                         f"{" (critical)" if enemy_critical else ""}"
@@ -718,9 +718,9 @@ class GameSection(backend.Section):
         enemy_protection_list = list((i.health, i.max_health) for i in enemy.items if i.equipped and i.itype == backend.System.ItemType.SHIELD)
         player_protection = (int(sum(prot[0] for prot in player_protection_list)), int(sum(prot[1] for prot in player_protection_list)))
         enemy_protection = (int(sum(prot[0] for prot in enemy_protection_list)), int(sum(prot[1] for prot in enemy_protection_list)))
-        print(f"You ({colorama.Fore.GREEN}{player.name}{colorama.Fore.RESET}) have: {(colorama.Fore.GREEN if player.health > 10 else colorama.Fore.RED) + colorama.Style.BRIGHT}{player.health}{colorama.Fore.RESET + colorama.Style.RESET_ALL}{colorama.Fore.BLUE}/{colorama.Fore.RESET}{colorama.Fore.GREEN}{player.max_health}{colorama.Fore.RESET} health"
+        print(f"You ({colorama.Fore.GREEN}{player.name}{colorama.Fore.RESET}) have: {(colorama.Fore.GREEN if player.health > 50 else colorama.Fore.RED) + colorama.Style.BRIGHT}{player.health}{colorama.Fore.RESET + colorama.Style.RESET_ALL}{colorama.Fore.BLUE}/{colorama.Fore.RESET}{colorama.Fore.GREEN}{player.max_health}{colorama.Fore.RESET} health"
               f" ({colorama.Fore.CYAN}{max(player_protection[0], 0)}/{player_protection[1]}{colorama.Fore.RESET} protection)")
-        print(f"Enemy ({colorama.Fore.RED}{enemy.name}{colorama.Fore.RESET}) has: {(colorama.Fore.GREEN if enemy.health > 10 else colorama.Fore.RED) + colorama.Style.BRIGHT}{enemy.health}{colorama.Fore.RESET + colorama.Style.RESET_ALL}{colorama.Fore.BLUE}/{colorama.Fore.RESET}{colorama.Fore.GREEN}{enemy.max_health}{colorama.Fore.RESET} health"
+        print(f"Enemy ({colorama.Fore.RED}{enemy.name}{colorama.Fore.RESET}) has: {(colorama.Fore.GREEN if enemy.health > 50 else colorama.Fore.RED) + colorama.Style.BRIGHT}{enemy.health}{colorama.Fore.RESET + colorama.Style.RESET_ALL}{colorama.Fore.BLUE}/{colorama.Fore.RESET}{colorama.Fore.GREEN}{enemy.max_health}{colorama.Fore.RESET} health"
               f" ({colorama.Fore.CYAN}{max(enemy_protection[0], 0)}/{enemy_protection[1]}{colorama.Fore.RESET} protection)")
     
     def render_items(self) -> Dict[str, backend.System.ItemProtocol]:

@@ -96,13 +96,11 @@ class ItemLibrary:
     }
 
     @classmethod
-    def generate_weapon(cls) -> ItemProtocol:
-        return random.choice((
-            WoodenSword(),
-        ))
+    def generate_weapon(cls, level: int) -> ItemProtocol:
+        listed_choices = list(i.__class__ for i in cls.weapons.values())
+        return random.choice(listed_choices[:min(level + 1, len(listed_choices))])()
     
     @classmethod
-    def generate_armor(cls) -> ItemProtocol:
-        return random.choice((
-            WoodenArmor(),
-        ))
+    def generate_armor(cls, level: int) -> ItemProtocol:
+        listed_choices = list(i.__class__ for i in cls.armor.values())
+        return random.choice(listed_choices[:min(level + 1, len(listed_choices))])()
