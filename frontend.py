@@ -9,6 +9,7 @@ import backend # Import the backend
 import datetime
 import random
 import os
+import re
 
 if not __name__ == "__main__":
     exit() # If this file was not run directly, we can simply exit like normal before anything get run.
@@ -37,15 +38,16 @@ class MenuSection(backend.Section): # We create a section for the menu
             "1": (f"{colorama.Fore.GREEN}Start{colorama.Fore.RESET}", "Game"),
             "2": (f"{colorama.Fore.CYAN}Saves{colorama.Fore.RESET}", "Save"),
             "3": (f"{colorama.Fore.BLUE}About{colorama.Fore.RESET}", "About"),
-            "4": (f"{colorama.Fore.CYAN}Settings{colorama.Fore.RESET}", "Settings"),
-            "5": (f"{colorama.Fore.YELLOW}Intel{colorama.Fore.RESET}", "Intel")
+            "4": (f"{colorama.Fore.YELLOW}Documentation{colorama.Fore.RESET}", "Documentation"),
+            "5": (f"{colorama.Fore.CYAN}Settings{colorama.Fore.RESET}", "Settings"),
+            "6": (f"{colorama.Fore.YELLOW}Intel{colorama.Fore.RESET}", "Intel")
         }
-        exit_id = "6"
+        exit_id = "7"
         if self.system.player: # If the game has initialized, we can safely reveal the shop!
-            options["6"] = (f"{colorama.Fore.MAGENTA}Shop{colorama.Fore.RESET}", "Shop")
-            options["7"] = (f"{colorama.Fore.LIGHTBLUE_EX}Blacksmith{colorama.Fore.RESET}", "Blacksmith")
-            options["8"] = (f"{colorama.Fore.CYAN + colorama.Style.BRIGHT}Inventory{colorama.Fore.RESET + colorama.Style.RESET_ALL}", "Inventory")
-            exit_id = "9"
+            options["7"] = (f"{colorama.Fore.MAGENTA}Shop{colorama.Fore.RESET}", "Shop")
+            options["8"] = (f"{colorama.Fore.LIGHTBLUE_EX}Blacksmith{colorama.Fore.RESET}", "Blacksmith")
+            options["9"] = (f"{colorama.Fore.CYAN + colorama.Style.BRIGHT}Inventory{colorama.Fore.RESET + colorama.Style.RESET_ALL}", "Inventory")
+            exit_id = "10"
         options[exit_id] = (f"{colorama.Fore.RED}Exit{colorama.Fore.RESET}", "Exit")
         for k, v in options.items():
             print(f"{colorama.Fore.BLUE}{k}{colorama.Fore.RESET}: {v[0]}")
@@ -467,7 +469,102 @@ class AboutSection(backend.Section):
 
     @property
     def page(self) -> List[str]:
-        return self.pages[self.index]
+        if self.index <= len(self.pages) - 1:
+            return self.pages[self.index]
+        return f"{colorama.Fore.RED}Page {self.index} not found.{colorama.Fore.RESET}"
+    
+    def on_render(self) -> None:
+        super().on_update()
+        for text in self.page:
+            print(text)
+        print()
+        print(f"{colorama.Fore.RED}0{colorama.Fore.RESET}: Go back")
+        print(f"{colorama.Fore.BLUE}1{colorama.Fore.RESET}: Next page")
+        solution = input("Select one option: ").lower().strip()
+        if solution == "0": 
+            backend.SectionManager.init_section(self.system, "Menu")
+            return
+        elif solution == "1":
+            self.index += 1
+            if self.index > len(self.pages) - 1:
+                self.index = 0
+            return
+
+class DocumentationSection(backend.Section):
+    def __init__(self) -> Self:
+        super().__init__()
+        self.pages: List[List[str]] = []
+        self.load_docs("docs.txt")
+    
+    def colorize_line(self, line: str, citation: bool) -> Tuple[str, bool]:
+        """Apply color rules to a single line of documentation, including inline citations."""
+        stripped = line.strip()
+
+        # Handle full-line citations (lines starting with '>' or '"')
+        if stripped.startswith(">") or stripped.startswith('"'):
+            citation = True
+            return f"{colorama.Fore.GREEN}{line}{colorama.Fore.RESET}", citation
+
+        # Blank lines reset citation mode
+        elif stripped == "":
+            citation = False
+            return line, citation
+
+        # Headings (lines starting with '#')
+        if line.startswith("#"):
+            return f"{colorama.Fore.CYAN + colorama.Style.BRIGHT}{line}{colorama.Fore.RESET + colorama.Style.RESET_ALL}", citation
+
+        # Bullet points
+        if line.lstrip().startswith("- "):
+            content = line.lstrip().removeprefix("- ").strip()
+            return f"{colorama.Fore.YELLOW}- {colorama.Fore.RESET}{colorama.Fore.BLUE}{content}{colorama.Fore.RESET}", citation
+
+        # Inline reset markers
+        line = line.replace("$$", colorama.Fore.RESET)
+
+        # --- Inline citations (segments between quotes) ---
+        # Replace quoted segments with yellow color
+        def colorize_quotes(match):
+            inner = match.group(1)
+            return f'{colorama.Fore.YELLOW}"{inner}"{colorama.Fore.RESET}{colorama.Fore.WHITE}'
+
+        # Apply inline quote highlighting only if there are quote pairs
+        if '"' in line:
+            # Add base color first to ensure resets work cleanly
+            line = f"{colorama.Fore.WHITE}" + re.sub(r'"(.*?)"', colorize_quotes, line) + colorama.Fore.RESET
+        else:
+            # If currently inside a multi-line citation, keep yellow
+            if citation:
+                line = f"{colorama.Fore.LIGHTBLUE_EX}{line}{colorama.Fore.RESET}"
+            else:
+                line = f"{colorama.Fore.WHITE}{line}{colorama.Fore.RESET}"
+
+        return line, citation
+
+    def load_docs(self, filename: str) -> None:
+        """Load and parse the documentation file into colored pages."""
+        with open(filename, "r", encoding="utf-8") as f:
+            pages = f.read().split("\n---\n")
+
+        for page in pages:
+            total_page = []
+            citation = False
+
+            for line in page.splitlines():
+                colored_line, citation = self.colorize_line(line, citation)
+                total_page.append(colored_line)
+            
+            self.pages.append(total_page)
+
+    def init(self) -> None:
+        super().init()
+        self.index: int = 0
+
+    @property
+    def page(self) -> List[str]:
+        if self.index <= len(self.pages) - 1:
+            return self.pages[self.index]
+        return f"{colorama.Fore.RED}Page {self.index} not found.{colorama.Fore.RESET}"
     
     def on_render(self) -> None:
         super().on_update()
@@ -658,6 +755,7 @@ class GameSection(backend.Section):
         print(f"---- {{{colorama.Fore.CYAN + colorama.Style.BRIGHT}GLADIATORERNA{colorama.Fore.RESET + colorama.Style.RESET_ALL}}} ----")
         print()
         self.print_enemy()
+        print(f"Round: {self.system.environment.round}")
         if self.log:
             print()
             self.print_log()
@@ -749,6 +847,7 @@ class SectionLibrary:
         "Blacksmith.Weapons": BlacksmithSection.Weapons(),
         "Blacksmith.Armor": BlacksmithSection.Armor(),
         "About": AboutSection(),
+        "Documentation": DocumentationSection(),
         "Save": SaveSection(),
         "Save.Save": SaveSection.Save(),
         "Game": GameSection(),

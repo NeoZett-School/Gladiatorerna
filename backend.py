@@ -204,6 +204,7 @@ class Environment:
         self.enemy: Enemy = enemy
         self.story: List[str] = generate_story()
         self.rewards: Dict[str, Any] = difficulty.data.get("rewards", {}).get(player.sys.level + 1, {})
+        self.round: int = 1
         self._story_index: int = 0
     
     @property
@@ -215,6 +216,7 @@ class Environment:
         self._story_index += 1
         if self._story_index > len(self.story) - 1:
             self._story_index = 0
+        self.round += 1
 
 class Section(System.Handler):
     handlers: List[System.Handler]

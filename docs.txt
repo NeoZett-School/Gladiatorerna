@@ -1,0 +1,163 @@
+# Section 1 - Saving
+
+What is actually saved:
+ - Settings
+ - Your player stats
+ - Your items
+
+What isn't saved:
+ - The enemy and environment
+
+---
+
+# Section 2 - Player
+
+> Characters:
+Default is Jim.
+
+As the player, you can select your character.
+With any given character, the specialization will be different.
+
+> Stats:
+Statistics such as max health.
+
+Levels will increase certain stats. Gain exp to gain levels.
+To gain exp, you'll have to go to the arena.
+Max health is dynamic to whatever shielding you might 
+have equipped during the fights. 
+
+---
+
+# Section 3 - Enemy
+
+> Generation:
+The creation of your enemy.
+
+Enemies level will be dynamic to the players.
+Depending on what level the enemy gets, they will 
+also have the chance to get more advanced weapons.
+They may only have at max, the the same amount of 
+weapon and armor with the same level as the player, 
+but it is randomised with a minimum as one.
+
+Depending on the name for the enemy, the enemy 
+will have different fight dialogs.
+
+---
+
+# Section 4 - Items
+
+> Health:
+The health of your items.
+
+Weapons will have a health and max health. When 
+you reach negative health (or zero), you cannot 
+use that weapon until it has been repaired (recharged, 
+if you will). Armor will also have a health. 
+This will be gathered as the players "protection".
+If the protection reaches zero (and only then) 
+will the damage decrement the health for that part.
+
+All health, also for the two parties (players - enemy 
+counts as a player) will regenerate based on 
+internal stats.
+
+---
+
+# Section 5 - Rewards
+
+The rewards are dynamic to what level the player is.
+Higher levels gives higher rewards, since higher levels 
+also provides more dangerous enemies, and also since 
+the user (player) will likely have their weapons and 
+armor upgraded or new.
+
+---
+
+# Section 6 - Loss
+
+The loss will always be a quarter of what you could win.
+
+---
+
+# Section 7 - Shop
+
+There are two categories: 
+Weapons, and Armor.
+
+Make sure to gather enough points to buy new gear and 
+progress further through the game.
+
+---
+
+# Section 8 - Inventory
+
+In your inventory, you can equip or unequip any of your 
+bought items.
+
+---
+
+# Section 9 - Blacksmith
+
+You can upgrade your bought items instead of buying new. 
+Just make sure that the new item doesn't outweight upgrading 
+another old one. You could also use different weapons for 
+different strategies.
+
+---
+
+# Section 10 - Inspection
+
+Inspect all items and your player.
+
+Everything you might want to know will be available here. 
+Just open the inspection menu and you can scroll through 
+all statistics.
+
+---
+
+# Section 11 - About and documentation
+
+Here, you will find appropiate information about this 
+project. For more information, locate the readme and 
+go to the github page, featured in the "about" section.
+
+---
+
+# Section 12 - In-game fights
+
+Open up a fight and you will find a lot of new elements.
+
+To distinguish what is what, we have this documentation.
+
+At the top, we find the enemy name, his 
+level and what round we are playing.
+
+Beneath this, you will also find a log for whenever you 
+make a move. This will show how much damage you and the 
+enemy did, along with what item they did so. If you leave 
+and then enter the arena again, only the log will be gone, 
+but the enemy will be the same unless the fight ended.
+
+If you look under this, you will find the current health 
+and protection for both you and the enemy.
+
+The last two sections are not very important. The first 
+one is the interactive story, making all fun. Then comes 
+the enemy attack dialog. This will be a simple explanation 
+of what the enemy tried doing.
+
+Lastly, we have the interface for what you will do next.
+We have all equipped weapons, their health and a short 
+description explaning what it means to select that item.
+
+If you don't enter anything, that means that you will do 
+nothing. But, be aware, the enemy may still attack.
+
+The repairs on your items (armor and weapons) are statistics 
+dependent on what item it is and what upgrade (Blacksmith grade) 
+they are, along with other statistics. The longer you wait 
+between your attacks, the more will these items get repaired. 
+That is why this game makes for a perfect timing and fighting 
+text-console gladiator game, with in-game points and other 
+engaging features.
