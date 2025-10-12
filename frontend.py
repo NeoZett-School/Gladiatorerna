@@ -620,6 +620,8 @@ class GameSection(backend.Section):
         self.initialized: bool = False
 
     def init(self) -> None:
+        super().init()
+
         if not self.initialized: 
             self.initialized = True
             # Some options are unchangeable after starting the game, like the character. 
@@ -641,14 +643,13 @@ class GameSection(backend.Section):
                 ),
                 difficulty
             )
-            self.handlers = [self.system.player]
-        super().init()
 
         self.log: Optional[List[str]] = None
         self.enemy_attack: str = self.system.environment.enemy.generate_attack()
     
     def on_update(self) -> None:
         super().on_update()
+        self.system.player.on_update()
         self.system.environment.enemy.on_update()
 
     def on_render(self) -> None:
