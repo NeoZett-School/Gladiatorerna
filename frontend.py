@@ -508,7 +508,7 @@ class SaveSection(backend.Section):
 
     def on_render(self) -> None:
         super().on_render()
-        print(f"---- {{{colorama.Fore.CYAN}SAVE FILES{colorama.Fore.RESET}}}")
+        print(f"---- {{{colorama.Fore.CYAN}SAVE FILES{colorama.Fore.RESET}}} ----")
         print()
         if self.system.player: print(f"{colorama.Fore.BLUE}1{colorama.Fore.RESET}: Save")
         options = self.render_saves()
@@ -603,13 +603,13 @@ class GameSection(backend.Section):
             backend.SectionManager.init_section(self.system, "Game")
 
     class Success(Directory):
-        title = f"{colorama.Fore.GREEN}Success! You won rewards: {colorama.Fore.RESET}"
+        title = f"{colorama.Fore.GREEN}Success{colorama.Fore.RESET}! You won rewards: "
         def init(self) -> None:
             super().init()
             self.rewards = self.system.environment.rewards
     
     class Loss(backend.Section):
-        title = f"{colorama.Fore.RED}Oh no! You lost rewards: {colorama.Fore.RESET}"
+        title = f"Oh no! You {colorama.Fore.RED}lost{colorama.Fore.RESET} rewards: "
         def init(self) -> None:
             super().init()
             self.rewards = self.system.environment.rewards
