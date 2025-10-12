@@ -6,6 +6,7 @@ print("Loading...", end="\r")
 from typing import Tuple, List, Dict, Optional, Self, Any
 from items import ItemLibrary # Import the item library
 import backend # Import the backend
+import datetime
 import random
 import os
 
@@ -27,6 +28,8 @@ class MenuSection(backend.Section): # We create a section for the menu
             print("has been chosen. Once you have started, you can go back and buy new gear.")
             print("To do this, open the store. Then, you can go back into the battlefield, selecting"
                   f" {colorama.Fore.GREEN}Start{colorama.Fore.RESET}.")
+        print()
+        print(f"Current time is: {datetime.datetime.now().strftime("%H:%M")}")
         print()
         print("Where would you like to go?")
         options = {
