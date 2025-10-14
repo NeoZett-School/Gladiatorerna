@@ -62,6 +62,10 @@ class Player:
         """The critical damage factor."""
         ...
     @property
+    def fire_damage(self) -> float:
+        """The current fire-damage inflicted."""
+        ...
+    @property
     def attack(self) -> int:
         """The total attack of the player."""
         ...
@@ -137,6 +141,10 @@ class ItemProtocol(Protocol):
     @property
     def critical_damage(self) -> float:
         """The critical damage of this item."""
+        ...
+    @property
+    def fire_damage(self) -> float:
+        """The fire-damage inflicted."""
         ...
     @property
     def upgrades(self) -> int:

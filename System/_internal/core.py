@@ -68,6 +68,10 @@ class Player:
         return self._data.get("critical_factor", 0.0)
     
     @property
+    def fire_damage(self) -> float:
+        return self._data.get("fire_damage", 0.0)
+    
+    @property
     def attack(self) -> int:
         critical_factor = self.critical_factor if self.critical_chance < random.uniform(0, 1) else 1.0
         level_factor = (1 + self.level * 0.25)
@@ -98,8 +102,11 @@ class Player:
         current_time = time.monotonic()
         if current_time >= self._next_heal:
             times = max(1, int((current_time - self._next_heal) // self.healing))
-            self._data["health"] = min(self.health + times, self.max_health)
+            self._data["health"] = min(self.health + times * (1 - self.fire_damage), self.max_health)
             self._next_heal = current_time + self.healing
+            self._data["fire_damage"] = self.fire_damage * (0.25 ** times)
+            if self.fire_damage <= 0.15:
+                self._data["fire_damage"] = 0
 
 class Enemy(Player):
     ...
@@ -154,6 +161,10 @@ class ItemProtocol(Protocol):
         return self._data.get("critical_damage", 0.0)
     
     @property
+    def fire_damage(self) -> float:
+        return self._data.get("fire_damage", 0.0)
+    
+    @property
     def upgrades(self) -> int:
         return int(self._data.get("upgrades", 0))
     
@@ -180,6 +191,7 @@ class ItemProtocol(Protocol):
             is_ctitical = self.critical_chance < random.randint(0, 1)
             critical = self.critical_damage if is_ctitical else 1.0
             total_damage = int((self.owner.attack + this_attack) * (1 + self.upgrades * 0.25) * critical)
+            other.fire_damage += self.fire_damage
             other.damage(total_damage)
             self.damage(total_damage)
             return is_ctitical, total_damage

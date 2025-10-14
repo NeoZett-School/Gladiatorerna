@@ -18,6 +18,7 @@ class PlayerData(TypedDict):
     base_attack: int
     critical_chance: float
     critical_factor: float
+    fire_damage: float
 
     # Do not touch these.
     points: Optional[int]
@@ -32,4 +33,5 @@ class ItemData(TypedDict):
     attack_range: Tuple[int, int]
     critical_chance: float
     critical_damage: float
+    fire_damage: float
     upgrades: int
