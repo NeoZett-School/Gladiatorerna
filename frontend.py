@@ -705,7 +705,7 @@ class GameSection(backend.Section):
             super().init()
             self.rewards = self.system.environment.rewards
     
-    class Loss(backend.Section):
+    class Loss(Directory):
         title = f"Oh no! You {colorama.Fore.RED}lost{colorama.Fore.RESET} rewards: "
         def init(self) -> None:
             super().init()
@@ -744,11 +744,6 @@ class GameSection(backend.Section):
 
         self.log: Optional[List[str]] = None
         self.enemy_attack: str = self.system.environment.enemy.generate_attack()
-    
-    def on_update(self) -> None:
-        super().on_update()
-        self.system.player.on_update()
-        self.system.environment.enemy.on_update()
 
     def on_render(self) -> None:
         super().on_render()
@@ -796,9 +791,16 @@ class GameSection(backend.Section):
         ]
         self.enemy_attack = self.system.environment.enemy.generate_attack()
         self.system.environment.move_on() # Move on along the story line
+
+        self.system.player.on_update()
+        self.system.environment.enemy.on_update()
+
         if enemy.is_dead:
             backend.SectionManager.init_section(self.system, "Game.Success")
         elif player.is_dead:
+            player._data["health"] = player.max_health
+            for item in player.items:
+                item._data["health"] = item.max_health
             backend.SectionManager.init_section(self.system, "Game.Loss")
     
     def print_enemy(self) -> None:
