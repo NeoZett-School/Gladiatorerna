@@ -636,6 +636,11 @@ class SaveSection(backend.Section):
             item._data = item_data
 
         player.sys._data = player_data
+
+        player.sys._data["health"] = player.sys.max_health
+        for item in player.sys.items:
+            item._data["health"] = item.max_health
+
         self.system.player = player
     
     def render_saves(self) -> Dict[str, Tuple[str, str]]:
@@ -690,10 +695,6 @@ class GameSection(backend.Section):
                 ),
                 difficulty
             )
-            player = self.system.player.sys
-            player._data["health"] = player._data["max_health"]
-            for item in player.items:
-                item._data["health"] = player._data["max_health"]
             if solution[1] == "N":
                 backend.SectionManager.init_section(self.system, "Menu")
                 return
@@ -795,13 +796,15 @@ class GameSection(backend.Section):
         self.system.player.on_update()
         self.system.environment.enemy.on_update()
 
-        if enemy.is_dead:
+        dead = (enemy.is_dead, player.is_dead)
+        if dead[0]:
             backend.SectionManager.init_section(self.system, "Game.Success")
-        elif player.is_dead:
+        elif dead[1]:
+            backend.SectionManager.init_section(self.system, "Game.Loss")
+        if any(dead):
             player._data["health"] = player.max_health
             for item in player.items:
                 item._data["health"] = item.max_health
-            backend.SectionManager.init_section(self.system, "Game.Loss")
     
     def print_enemy(self) -> None:
         enemy = self.system.environment.enemy.sys

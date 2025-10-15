@@ -102,7 +102,7 @@ class Player:
         current_time = time.monotonic()
         if current_time >= self._next_heal:
             times = max(1, int((current_time - self._next_heal) // self.healing))
-            self._data["health"] = min(self.health + times * (1 - self.fire_damage), self.max_health)
+            self._data["health"] = min(self.health + times * (1 - self.fire_damage * 0.75), self.max_health)
             self._next_heal = current_time + self.healing
             self._data["fire_damage"] = self.fire_damage * (0.95 ** times)
             if self.fire_damage <= 0.75:
