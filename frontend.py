@@ -158,12 +158,12 @@ class ShopSection(backend.Section):
     class Weapons(Directory):
         def init(self) -> None:
             super().init()
-            self.items = [(n, i) for n, i in ItemLibrary.weapons.items() if not i.owned and i.minimal_level <= self.system.player.sys.level]
+            self.items = [i for i in ItemLibrary.weapons if not i.owned and i.minimal_level <= self.system.player.sys.level]
 
     class Armor(Directory): # Caching the items into a list that helps to unpack does also help with performance.
         def init(self) -> None:
             super().init()
-            self.items = [(n, i) for n, i in ItemLibrary.armor.items() if not i.owned and i.minimal_level <= self.system.player.sys.level]
+            self.items = [i for i in ItemLibrary.armor if not i.owned and i.minimal_level <= self.system.player.sys.level]
     
     def init(self) -> None:
         super().init()
@@ -207,11 +207,11 @@ class ShopSection(backend.Section):
     def render_count(self, count: int) -> None:
         print(f"Items for sale: {count}")
     
-    def render_items(self, points: int, items: List[Tuple[str, backend.System.ItemProtocol]]) -> Dict[str, backend.System.ItemProtocol]:
+    def render_items(self, points: int, items: List[backend.System.ItemProtocol]) -> Dict[str, backend.System.ItemProtocol]:
         processed = {}
-        for i, (name, item) in enumerate(items):
+        for i, item in enumerate(items):
             if item.owned or not item.minimal_level <= self.system.player.sys.level: continue
-            print(f"{colorama.Fore.BLUE}{i+1}{colorama.Fore.RESET}: {colorama.Fore.MAGENTA}{name}{colorama.Fore.RESET} [{(colorama.Fore.GREEN if points >= item.cost else colorama.Fore.RED) + colorama.Style.BRIGHT}{item.cost}p{colorama.Fore.RESET + colorama.Style.RESET_ALL}] - {colorama.Fore.BLUE}{item.desc}{colorama.Fore.RESET}")
+            print(f"{colorama.Fore.BLUE}{i+1}{colorama.Fore.RESET}: {colorama.Fore.MAGENTA}{item.name}{colorama.Fore.RESET} [{(colorama.Fore.GREEN if points >= item.cost else colorama.Fore.RED) + colorama.Style.BRIGHT}{item.cost}p{colorama.Fore.RESET + colorama.Style.RESET_ALL}] - {colorama.Fore.BLUE}{item.desc}{colorama.Fore.RESET}")
             processed[str(i+1)] = item
         return processed
 
@@ -242,12 +242,12 @@ class InventorySection(backend.Section):
     class Weapons(Directory):
         def init(self) -> None:
             super().init()
-            self.items = [(n, i) for n, i in ItemLibrary.weapons.items() if i in self.system.player.sys.items and i.owner == self.system.player.sys]
+            self.items = [(n, i) for n, i in self.system.player.inventory.weapons.items() if i.owned]
 
     class Armor(Directory): # Caching the items into a list that helps to unpack does also help with performance.
         def init(self) -> None:
             super().init()
-            self.items = [(n, i) for n, i in ItemLibrary.armor.items() if i in self.system.player.sys.items and i.owner == self.system.player.sys]
+            self.items = [(n, i) for n, i in self.system.player.inventory.armor.items() if i.owned]
 
     def on_render(self) -> None:
         super().on_render()
@@ -285,7 +285,7 @@ class InventorySection(backend.Section):
     def render_items(self, items: List[Tuple[str, backend.System.ItemProtocol]]) -> Dict[str, backend.System.ItemProtocol]:
         processed = {}
         for i, (name, item) in enumerate(items):
-            if not item in self.system.player.sys.items or not item.owner == self.system.player.sys: continue
+            if not item.owned: continue
             print(f"{colorama.Fore.BLUE}{i+1}{colorama.Fore.RESET}: {colorama.Fore.MAGENTA}{name}{colorama.Fore.RESET} [{(colorama.Fore.GREEN if item.equipped else colorama.Fore.RED) + colorama.Style.BRIGHT}{"Equipped" if item.equipped else "Unequipped"}{colorama.Fore.RESET + colorama.Style.RESET_ALL}] - {colorama.Fore.BLUE}{item.desc}{colorama.Fore.RESET}")
             processed[str(i+1)] = item
         return processed
@@ -296,7 +296,7 @@ class IntelSection(backend.Section):
 
         # Items
         print("Items:")
-        for item in ItemLibrary.items:
+        for item in self.system.player.inventory.items:
             if self.system.player:
                 owned = item in self.system.player.sys.items and item.owner == self.system.player.sys
             print(f"{colorama.Fore.MAGENTA}{item.name}{colorama.Fore.RESET}"
@@ -390,17 +390,17 @@ class BlacksmithSection(backend.Section):
     class Weapons(Directory):
         def init(self) -> None:
             super().init()
-            self.items = [(n, i) for n, i in ItemLibrary.weapons.items() if i.owned]
+            self.items = [(n, i) for n, i in self.system.player.inventory.weapons.items() if i.owned]
 
     class Armor(Directory): # Caching the items into a list that helps to unpack does also help with performance.
         def init(self) -> None:
             super().init()
-            self.items = [(n, i) for n, i in ItemLibrary.armor.items() if i.owned]
+            self.items = [(n, i) for n, i in self.system.player.inventory.armor.items() if i.owned]
     
     def init(self) -> None:
         super().init()
         self.to_upgrade: Optional[backend.System.ItemProtocol] = None
-        self.items: int = list(i for i in ItemLibrary.items if i.owned)
+        self.items: int = list(i for i in self.system.player.inventory.items if i.owned)
 
     def on_render(self) -> None:
         super().on_render()
@@ -728,9 +728,9 @@ class GameSection(backend.Section):
             # Setup the player
             if not self.system.player: # Only initialize the player if it isn't already there
                 self.system.player = backend.Player(self.system.char_name)
-                player = self.system.player.sys
-                ItemLibrary.weapons["Wooden Sword"].buy(player)
-                ItemLibrary.armor["Wooden Armor"].buy(player)
+                player = self.system.player
+                player.inventory.weapons["Wooden Sword"].buy(player.sys)
+                player.inventory.armor["Wooden Armor"].buy(player.sys)
 
             # Load the initial environment
             difficulty = self.system.difficulty

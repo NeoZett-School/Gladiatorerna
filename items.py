@@ -7,8 +7,9 @@ import random
 # ---- Weapons ----
 
 class WoodenSword(ItemProtocol):
+    itype = ItemType.ATTACK
     def __init__(self):
-        super().__init__(ItemType.ATTACK, {
+        super().__init__({
             "name": "Wooden Sword",
             "desc": "A basic wooden sword",
             "intel": "0 Cost, 100 Item health, 0.5 second repair time, 5 to 10 damage, 50% critical, 115% critical damage",
@@ -27,8 +28,9 @@ class WoodenSword(ItemProtocol):
         ))
 
 class SteelSword(ItemProtocol):
+    itype = ItemType.ATTACK
     def __init__(self):
-        super().__init__(ItemType.ATTACK, {
+        super().__init__({
             "name": "Steel Sword",
             "desc": "A strong and solid steel sword",
             "intel": "10 Cost, 120 Item health, 0.4 second repair time, 7 to 13 damage, 30% critical, 125% critical damage",
@@ -47,8 +49,9 @@ class SteelSword(ItemProtocol):
         ))
 
 class FireBow(ItemProtocol):
+    itype = ItemType.ATTACK
     def __init__(self):
-        super().__init__(ItemType.ATTACK, {
+        super().__init__({
             "name": "Fire Bow",
             "desc": "A strong, dangerous bow. This bow does not only deal, damage. But also -- procedually -- fire damage!",
             "intel": "15 Cost, 80 Item health, 0.2 second repair time, 5 to 10 damage, 40% critical, 115% critical damage, 20 fire damage",
@@ -71,8 +74,9 @@ class FireBow(ItemProtocol):
 # ---- Armor ----
 
 class WoodenArmor(ItemProtocol):
+    itype = ItemType.SHIELD
     def __init__(self):
-        super().__init__(ItemType.SHIELD, {
+        super().__init__({
             "name": "Wooden Armor",
             "desc": "Wooden armor is a simple way to protect your body",
             "intel": "0 Cost, 100 Item health (shielding), 1.5 second repair time",
@@ -85,8 +89,9 @@ class WoodenArmor(ItemProtocol):
         })
 
 class SteelArmor(ItemProtocol):
+    itype = ItemType.SHIELD
     def __init__(self):
-        super().__init__(ItemType.SHIELD, {
+        super().__init__({
             "name": "Steel Armor",
             "desc": "Steel armor is stronger than wooden",
             "intel": "10 Cost, 150 Item health (shielding), 2.0 second repair time",
@@ -102,28 +107,31 @@ class SteelArmor(ItemProtocol):
 
 class ItemLibrary:
     items: List[ItemProtocol] = [
-        WoodenSword(),
-        WoodenArmor(),
-        SteelSword(),
-        SteelArmor(),
-        FireBow()
+        WoodenSword,
+        WoodenArmor,
+        SteelSword,
+        SteelArmor,
+        FireBow
     ]
-    weapons: Dict[str, ItemProtocol] = {i.name: i for i in items if i.itype == ItemType.ATTACK}
-    armor: Dict[str, ItemProtocol] = {i.name: i for i in items if i.itype == ItemType.SHIELD}
 
-    all_by_name: Dict[str, ItemProtocol] = {
-        i.name: i.__class__ for i in items
-    }
-    inventory_by_name: Dict[str, ItemProtocol] = {
-        i.name: i for i in items
-    }
+    weapons: List[ItemProtocol] = list(i for i in items if i.itype == ItemType.ATTACK)
+    armor: List[ItemProtocol] = list(i for i in items if i.itype == ItemType.SHIELD)
+
+    class Inventory:
+        # Weapons and armor will make up the player inventory completely.
+        items: List[ItemProtocol]
+        weapons: Dict[str, ItemProtocol]
+        armor: Dict[str, ItemProtocol]
+
+        def __init__(self) -> None:
+            self.item = (i() for i in ItemLibrary.items) # Build inventory
+            self.weapons = {i.name: i for i in ItemLibrary.items if i.itype == ItemType.ATTACK}
+            self.armor = {i.name: i for i in ItemLibrary.items if i.itype == ItemType.SHIELD}
 
     @classmethod
     def generate_weapon(cls, level: int) -> ItemProtocol:
-        listed_choices = list(i.__class__ for i in cls.weapons.values())
-        return random.choice(listed_choices[:min(level + 1, len(listed_choices))])()
+        return random.choice(cls.weapons[:min(level + 1, len(cls.weapons))])()
     
     @classmethod
     def generate_armor(cls, level: int) -> ItemProtocol:
-        listed_choices = list(i.__class__ for i in cls.armor.values())
-        return random.choice(listed_choices[:min(level + 1, len(listed_choices))])()
+        return random.choice(cls.armor[:min(level + 1, len(cls.armor))])()

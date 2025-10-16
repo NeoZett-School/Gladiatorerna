@@ -113,11 +113,11 @@ class Enemy(Player):
 
 @runtime_checkable
 class ItemProtocol(Protocol): 
-    def __init__(self, itype: ItemType, _data: Optional[ItemData] = None) -> Self:
+    itype: ItemType
+    def __init__(self, _data: Optional[ItemData] = None) -> Self:
         self._data: ItemData = _data or {}
         self._next_repair: float = time.monotonic()
         self.owner: Optional[Player] = None
-        self.itype: ItemType = itype
         self.equipped: bool = False
 
     @property
