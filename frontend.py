@@ -663,7 +663,7 @@ class LoadingSection(backend.Section):
 
     def on_render(self) -> None:
         super().init()
-        print(f"{colorama.Fore.BLUE}Bringing life to your gladiators... please wait.{colorama.Fore.RESET}")
+        print(f"{colorama.Fore.YELLOW}Bringing life to your gladiators... please wait.{colorama.Fore.RESET}")
         print()
         print(f"{colorama.Fore.CYAN}Loading:{colorama.Fore.RESET} {colorama.Fore.GREEN + colorama.Style.BRIGHT}{self.count}%{colorama.Style.RESET_ALL}")
         time.sleep(0.025)
