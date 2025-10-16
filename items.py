@@ -1,6 +1,6 @@
 # Here, we create all items (Weapons and armour) that you can buy or use in the game.
 
-from typing import List, Dict
+from typing import List, Dict, Optional
 from System import ItemProtocol, ItemType
 import random
 
@@ -54,7 +54,7 @@ class FireBow(ItemProtocol):
         super().__init__({
             "name": "Fire Bow",
             "desc": "A strong, dangerous bow. This bow does not only deal, damage. But also -- procedually -- fire damage!",
-            "intel": "15 Cost, 80 Item health, 0.2 second repair time, 5 to 10 damage, 40% critical, 115% critical damage, 20 fire damage",
+            "intel": "15 Cost, 80 Item health, 0.2 second repair time, 5 to 10 damage, 40% critical, 115% critical damage, 20 fire damage, 3 minimal level",
             "cost": 15,
             "max_health": 80,
             "reapair_time": 0.2,
@@ -127,6 +127,11 @@ class ItemLibrary:
             self.items = list(i() for i in ItemLibrary.items) # Build inventory
             self.weapons = {i.name: i for i in self.items if i.itype == ItemType.ATTACK}
             self.armor = {i.name: i for i in self.items if i.itype == ItemType.SHIELD}
+        
+        def get_by_name(self, name: str) -> Optional[ItemProtocol]:
+            if name in self.weapons: return self.weapons[name]
+            if name in self.armor: return self.armor[name]
+            return
 
     @classmethod
     def generate_weapon(cls, level: int) -> ItemProtocol:

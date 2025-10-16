@@ -163,17 +163,17 @@ class ShopSection(backend.Section):
     class Weapons(Directory):
         def init(self) -> None:
             super().init()
-            self.items = [i for i in ItemLibrary.weapons if not i.owned and i.minimal_level <= self.system.player.sys.level]
+            self.items = [i for i in self.system.player.inventory.weapons.values() if not i.owned and i.minimal_level <= self.system.player.sys.level]
 
     class Armor(Directory): # Caching the items into a list that helps to unpack does also help with performance.
         def init(self) -> None:
             super().init()
-            self.items = [i for i in ItemLibrary.armor if not i.owned and i.minimal_level <= self.system.player.sys.level]
+            self.items = [i for i in self.system.player.inventory.armor.values() if not i.owned and i.minimal_level <= self.system.player.sys.level]
     
     def init(self) -> None:
         super().init()
         self.to_buy: Optional[backend.System.ItemProtocol] = None
-        self.items: int = list(i for i in ItemLibrary.items if not i.owned and i.minimal_level <= self.system.player.sys.level)
+        self.items: int = list(i for i in self.system.player.inventory.items if not i.owned and i.minimal_level <= self.system.player.sys.level)
 
     def on_render(self) -> None:
         super().on_render()
@@ -634,7 +634,8 @@ class SaveSection(backend.Section):
 
         items = player_data.pop("items")
         for name, item_data in items.items():
-            item = ItemLibrary.inventory_by_name[name]
+            item = player.inventory.get_by_name(name)
+            if not item: continue
             player.sys.items.append(item)
             item.owner = player.sys
             item.equipped = item_data.pop("equipped", True)
