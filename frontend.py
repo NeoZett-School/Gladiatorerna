@@ -327,7 +327,7 @@ class IntelSection(backend.Section):
         if self.system.player:
             print_items(self.system.player.inventory.items)
         else: print_items(list(i() for i in ItemLibrary.items))
-            
+        
         # Stats
         print()
         print("Players:")
