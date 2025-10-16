@@ -8,6 +8,7 @@ from items import ItemLibrary # Import the item library
 import backend # Import the backend
 import datetime
 import random
+import time
 import os
 import re
 
@@ -19,10 +20,10 @@ colorama.init() # Initialize colorama
 class MenuSection(backend.Section): # We create a section for the menu
     def on_render(self) -> None: # On every render, we do...
         super().on_render() # Firstly, run the internal functionality from the parenting class
-        print(f"Welcome to {colorama.Fore.CYAN + colorama.Style.BRIGHT}Gladiatorerna{colorama.Fore.RESET + colorama.Style.RESET_ALL}!")
+        print(f"Welcome to {colorama.Fore.CYAN + colorama.Style.BRIGHT}Gladiatorerna{colorama.Style.RESET_ALL}!")
         if not self.system.player:
             print()
-            print(f"{colorama.Style.BRIGHT}Before{colorama.Style.RESET_ALL} you {colorama.Fore.GREEN}Start{colorama.Fore.RESET}, check that you have chosen"
+            print(f"{colorama.Style.BRIGHT}Before{colorama.Style.RESET_ALL} you {colorama.Fore.GREEN}Start{colorama.Style.RESET_ALL}, check that you have chosen"
                   f" your character in the {colorama.Fore.CYAN}Settings{colorama.Fore.RESET}.")
             print(f"The {colorama.Fore.MAGENTA}Shop{colorama.Fore.RESET} and {colorama.Fore.CYAN}Inventory{colorama.Fore.RESET}"
                   " will be unlocked once you've started the game and your character ")
@@ -46,7 +47,7 @@ class MenuSection(backend.Section): # We create a section for the menu
         if self.system.player: # If the game has initialized, we can safely reveal the shop!
             options["7"] = (f"{colorama.Fore.MAGENTA}Shop{colorama.Fore.RESET}", "Shop")
             options["8"] = (f"{colorama.Fore.LIGHTBLUE_EX}Blacksmith{colorama.Fore.RESET}", "Blacksmith")
-            options["9"] = (f"{colorama.Fore.CYAN + colorama.Style.BRIGHT}Inventory{colorama.Fore.RESET + colorama.Style.RESET_ALL}", "Inventory")
+            options["9"] = (f"{colorama.Fore.CYAN + colorama.Style.BRIGHT}Inventory{colorama.Style.RESET_ALL}", "Inventory")
             exit_id = "10"
         options[exit_id] = (f"{colorama.Fore.RED}Exit{colorama.Fore.RESET}", "Exit")
         for k, v in options.items():
@@ -56,6 +57,10 @@ class MenuSection(backend.Section): # We create a section for the menu
 
         if solution[1] == "Exit": # Exit if we say so.
             self.system.quit()
+            return
+        
+        if solution[1] == "Game" and not self.system.player:
+            backend.SectionManager.init_section(self.system, "Loading")
             return
         
         backend.SectionManager.init_section(self.system, solution[1])
@@ -115,10 +120,10 @@ class ShopSection(backend.Section):
             item = self.shop.to_buy
             options = {
                 # id, title, code
-                "1": (f"{colorama.Fore.GREEN + colorama.Style.BRIGHT}Yes{colorama.Fore.RESET + colorama.Style.RESET_ALL}", "Y"),
-                "2": (f"{colorama.Fore.RED + colorama.Style.BRIGHT}No{colorama.Fore.RESET + colorama.Style.RESET_ALL}", "N")
+                "1": (f"{colorama.Fore.GREEN + colorama.Style.BRIGHT}Yes{colorama.Style.RESET_ALL}", "Y"),
+                "2": (f"{colorama.Fore.RED + colorama.Style.BRIGHT}No{colorama.Style.RESET_ALL}", "N")
             }
-            print(f"Are you sure you want to buy {colorama.Fore.MAGENTA + colorama.Style.BRIGHT}{item.name}{colorama.Fore.RESET + colorama.Style.RESET_ALL}?")
+            print(f"Are you sure you want to buy {colorama.Fore.MAGENTA + colorama.Style.BRIGHT}{item.name}{colorama.Style.RESET_ALL}?")
             for k, v in options.items():
                 print(f"{colorama.Fore.BLUE}{k}{colorama.Fore.RESET}: {v[0]}")
             solution = options.get(input("Select one option: ").lower().strip())
@@ -199,10 +204,10 @@ class ShopSection(backend.Section):
         backend.SectionManager.init_section(self.system, solution[1])
 
     def render_title(self) -> None:
-        print(f"---- {{{colorama.Fore.GREEN + colorama.Style.BRIGHT}SHOP{colorama.Fore.RESET + colorama.Style.RESET_ALL}}} ----")
+        print(f"---- {{{colorama.Fore.GREEN + colorama.Style.BRIGHT}SHOP{colorama.Style.RESET_ALL}}} ----")
     
     def render_points(self, points: int) -> None:
-        print(f"Your points: {colorama.Fore.YELLOW + colorama.Style.BRIGHT}{points}p{colorama.Fore.RESET + colorama.Style.RESET_ALL}")
+        print(f"Your points: {colorama.Fore.YELLOW + colorama.Style.BRIGHT}{points}p{colorama.Style.RESET_ALL}")
     
     def render_count(self, count: int) -> None:
         print(f"Items for sale: {count}")
@@ -211,7 +216,7 @@ class ShopSection(backend.Section):
         processed = {}
         for i, item in enumerate(items):
             if item.owned or not item.minimal_level <= self.system.player.sys.level: continue
-            print(f"{colorama.Fore.BLUE}{i+1}{colorama.Fore.RESET}: {colorama.Fore.MAGENTA}{item.name}{colorama.Fore.RESET} [{(colorama.Fore.GREEN if points >= item.cost else colorama.Fore.RED) + colorama.Style.BRIGHT}{item.cost}p{colorama.Fore.RESET + colorama.Style.RESET_ALL}] - {colorama.Fore.BLUE}{item.desc}{colorama.Fore.RESET}")
+            print(f"{colorama.Fore.BLUE}{i+1}{colorama.Fore.RESET}: {colorama.Fore.MAGENTA}{item.name}{colorama.Fore.RESET} [{(colorama.Fore.GREEN if points >= item.cost else colorama.Fore.RED) + colorama.Style.BRIGHT}{item.cost}p{colorama.Style.RESET_ALL}] - {colorama.Fore.BLUE}{item.desc}{colorama.Fore.RESET}")
             processed[str(i+1)] = item
         return processed
 
@@ -277,16 +282,16 @@ class InventorySection(backend.Section):
         backend.SectionManager.init_section(self.system, solution[1])
 
     def render_title(self) -> None:
-        print(f"---- {{{colorama.Fore.CYAN + colorama.Style.BRIGHT}Inventory{colorama.Fore.RESET + colorama.Style.RESET_ALL}}} ----")
+        print(f"---- {{{colorama.Fore.CYAN + colorama.Style.BRIGHT}Inventory{colorama.Style.RESET_ALL}}} ----")
     
     def render_count(self, count: int) -> None:
-        print(f"Your items: {colorama.Fore.YELLOW + colorama.Style.BRIGHT}{count}{colorama.Fore.RESET + colorama.Style.RESET_ALL}")
+        print(f"Your items: {colorama.Fore.YELLOW + colorama.Style.BRIGHT}{count}{colorama.Style.RESET_ALL}")
 
     def render_items(self, items: List[Tuple[str, backend.System.ItemProtocol]]) -> Dict[str, backend.System.ItemProtocol]:
         processed = {}
         for i, (name, item) in enumerate(items):
             if not item.owned: continue
-            print(f"{colorama.Fore.BLUE}{i+1}{colorama.Fore.RESET}: {colorama.Fore.MAGENTA}{name}{colorama.Fore.RESET} [{(colorama.Fore.GREEN if item.equipped else colorama.Fore.RED) + colorama.Style.BRIGHT}{"Equipped" if item.equipped else "Unequipped"}{colorama.Fore.RESET + colorama.Style.RESET_ALL}] - {colorama.Fore.BLUE}{item.desc}{colorama.Fore.RESET}")
+            print(f"{colorama.Fore.BLUE}{i+1}{colorama.Fore.RESET}: {colorama.Fore.MAGENTA}{name}{colorama.Fore.RESET} [{(colorama.Fore.GREEN if item.equipped else colorama.Fore.RED) + colorama.Style.BRIGHT}{"Equipped" if item.equipped else "Unequipped"}{colorama.Style.RESET_ALL}] - {colorama.Fore.BLUE}{item.desc}{colorama.Fore.RESET}")
             processed[str(i+1)] = item
         return processed
 
@@ -301,7 +306,7 @@ class IntelSection(backend.Section):
                 owned = item in self.system.player.sys.items and item.owner == self.system.player.sys
             print(f"{colorama.Fore.MAGENTA}{item.name}{colorama.Fore.RESET}"
                   f"{f" ({colorama.Fore.YELLOW}{item.upgrades}{colorama.Fore.RESET})" \
-                  f" [{(colorama.Fore.GREEN if item.equipped and owned else colorama.Fore.RED) + colorama.Style.BRIGHT}{"Equipped" if item.equipped else "Unequipped" if owned else "Not owned"}{colorama.Fore.RESET + colorama.Style.RESET_ALL}]" if self.system.player else ""}" 
+                  f" [{(colorama.Fore.GREEN if item.equipped and owned else colorama.Fore.RED) + colorama.Style.BRIGHT}{"Equipped" if item.equipped else "Unequipped" if owned else "Not owned"}{colorama.Style.RESET_ALL}]" if self.system.player else ""}" 
                   f" - {colorama.Fore.BLUE}{item.desc}{colorama.Fore.RESET}"
                   f" - {colorama.Fore.BLUE}{item.intel}{colorama.Fore.RESET}")
             
@@ -347,10 +352,10 @@ class BlacksmithSection(backend.Section):
             item = self.blacksmith.to_upgrade
             options = {
                 # id, title, code
-                "1": (f"{colorama.Fore.GREEN + colorama.Style.BRIGHT}Yes{colorama.Fore.RESET + colorama.Style.RESET_ALL}", "Y"),
-                "2": (f"{colorama.Fore.RED + colorama.Style.BRIGHT}No{colorama.Fore.RESET + colorama.Style.RESET_ALL}", "N")
+                "1": (f"{colorama.Fore.GREEN + colorama.Style.BRIGHT}Yes{colorama.Style.RESET_ALL}", "Y"),
+                "2": (f"{colorama.Fore.RED + colorama.Style.BRIGHT}No{colorama.Style.RESET_ALL}", "N")
             }
-            print(f"Are you sure you want to upgrade {colorama.Fore.MAGENTA + colorama.Style.BRIGHT}{item.name}{colorama.Fore.RESET + colorama.Style.RESET_ALL}?")
+            print(f"Are you sure you want to upgrade {colorama.Fore.MAGENTA + colorama.Style.BRIGHT}{item.name}{colorama.Style.RESET_ALL}?")
             for k, v in options.items():
                 print(f"{colorama.Fore.BLUE}{k}{colorama.Fore.RESET}: {v[0]}")
             solution = options.get(input("Select one option: ").lower().strip())
@@ -431,10 +436,10 @@ class BlacksmithSection(backend.Section):
         backend.SectionManager.init_section(self.system, solution[1])
 
     def render_title(self) -> None:
-        print(f"---- {{{colorama.Fore.GREEN + colorama.Style.BRIGHT}BLACKSMITH{colorama.Fore.RESET + colorama.Style.RESET_ALL}}} ----")
+        print(f"---- {{{colorama.Fore.GREEN + colorama.Style.BRIGHT}BLACKSMITH{colorama.Style.RESET_ALL}}} ----")
     
     def render_points(self, points: int) -> None:
-        print(f"Your points: {colorama.Fore.YELLOW + colorama.Style.BRIGHT}{points}p{colorama.Fore.RESET + colorama.Style.RESET_ALL}")
+        print(f"Your points: {colorama.Fore.YELLOW + colorama.Style.BRIGHT}{points}p{colorama.Style.RESET_ALL}")
     
     def render_count(self, count: int) -> None:
         print(f"Items for upgrade: {count}")
@@ -443,7 +448,7 @@ class BlacksmithSection(backend.Section):
         processed = {}
         for i, (name, item) in enumerate(items):
             if not item.owned: continue
-            print(f"{colorama.Fore.BLUE}{i+1}{colorama.Fore.RESET}: {colorama.Fore.MAGENTA}{name}{colorama.Fore.RESET} [{(colorama.Fore.GREEN if points >= item.upgrade_cost else colorama.Fore.RED) + colorama.Style.BRIGHT}{item.upgrade_cost}p{colorama.Fore.RESET + colorama.Style.RESET_ALL}] - {colorama.Fore.BLUE}{item.desc}{colorama.Fore.RESET}")
+            print(f"{colorama.Fore.BLUE}{i+1}{colorama.Fore.RESET}: {colorama.Fore.MAGENTA}{name}{colorama.Fore.RESET} [{(colorama.Fore.GREEN if points >= item.upgrade_cost else colorama.Fore.RED) + colorama.Style.BRIGHT}{item.upgrade_cost}p{colorama.Style.RESET_ALL}] - {colorama.Fore.BLUE}{item.desc}{colorama.Fore.RESET}")
             processed[str(i+1)] = item
         return processed
 
@@ -512,7 +517,7 @@ class DocumentationSection(backend.Section):
 
         # Headings (lines starting with '#')
         if line.startswith("#"):
-            return f"{colorama.Fore.CYAN + colorama.Style.BRIGHT}{line}{colorama.Fore.RESET + colorama.Style.RESET_ALL}", citation
+            return f"{colorama.Fore.CYAN + colorama.Style.BRIGHT}{line}{colorama.Style.RESET_ALL}", citation
 
         # Bullet points
         if line.lstrip().startswith("- "):
@@ -587,7 +592,7 @@ class SaveSection(backend.Section):
     class Save(backend.Section):
         def on_render(self) -> None:
             super().on_render()
-            print(f"{colorama.Fore.CYAN + colorama.Style.BRIGHT}< NEW SAVE FILE >{colorama.Fore.RESET + colorama.Style.RESET_ALL}")
+            print(f"{colorama.Fore.CYAN + colorama.Style.BRIGHT}< NEW SAVE FILE >{colorama.Style.RESET_ALL}")
             file = input("Input a name for this file: ").strip()
             if not file.endswith(".json"): file = file+".json"
             data = self.system.player.sys._data
@@ -651,6 +656,19 @@ class SaveSection(backend.Section):
             processed[str(i+2)] = (f"{os.path.splitext(os.path.basename(file))[0]} - last saved: {last_saved}", file)
         return processed
 
+class Loading(backend.Section):
+    def init(self) -> None:
+        super().init()
+        self.count: int = 0
+
+    def on_render(self) -> None:
+        super().init()
+        print(f"\r{colorama.Fore.CYAN}Loading:{colorama.Fore.RESET} {colorama.Fore.GREEN + colorama.Style.BRIGHT}{self.count}%{colorama.Style.RESET_ALL}", end = "")
+        time.sleep(0.1)
+        self.count += 1
+        if self.count > 100:
+            backend.SectionManager.init_section(self.system, "Game")
+
 class GameSection(backend.Section):
     class Directory(backend.Section):
         title: str
@@ -673,13 +691,13 @@ class GameSection(backend.Section):
                         player._data["exp"] = new_exp
                     
                 if not self.loss:
-                    print(f"{colorama.Fore.YELLOW}{reward}{colorama.Fore.RESET} {colorama.Fore.GREEN + colorama.Style.BRIGHT}+{amount}{colorama.Fore.RESET + colorama.Style.RESET_ALL}")
-                else:print(f"{colorama.Fore.YELLOW}{reward}{colorama.Fore.RESET} {colorama.Fore.RED + colorama.Style.BRIGHT}-{abs(amount)}{colorama.Fore.RESET + colorama.Style.RESET_ALL}")
+                    print(f"{colorama.Fore.YELLOW}{reward}{colorama.Fore.RESET} {colorama.Fore.GREEN + colorama.Style.BRIGHT}+{amount}{colorama.Style.RESET_ALL}")
+                else:print(f"{colorama.Fore.YELLOW}{reward}{colorama.Fore.RESET} {colorama.Fore.RED + colorama.Style.BRIGHT}-{abs(amount)}{colorama.Style.RESET_ALL}")
             print()
             options = {
                 # id, title, code
-                "1": (f"{colorama.Fore.GREEN + colorama.Style.BRIGHT}Yes{colorama.Fore.RESET + colorama.Style.RESET_ALL}", "Y"),
-                "2": (f"{colorama.Fore.RED + colorama.Style.BRIGHT}No{colorama.Fore.RESET + colorama.Style.RESET_ALL}", "N")
+                "1": (f"{colorama.Fore.GREEN + colorama.Style.BRIGHT}Yes{colorama.Style.RESET_ALL}", "Y"),
+                "2": (f"{colorama.Fore.RED + colorama.Style.BRIGHT}No{colorama.Style.RESET_ALL}", "N")
             }
             print("Do you want to continue")
             for k, v in options.items():
@@ -748,7 +766,7 @@ class GameSection(backend.Section):
 
     def on_render(self) -> None:
         super().on_render()
-        print(f"---- {{{colorama.Fore.CYAN + colorama.Style.BRIGHT}GLADIATORERNA{colorama.Fore.RESET + colorama.Style.RESET_ALL}}} ----")
+        print(f"---- {{{colorama.Fore.CYAN + colorama.Style.BRIGHT}GLADIATORERNA{colorama.Style.RESET_ALL}}} ----")
         print()
         self.print_enemy()
         print(f"Round: {self.system.environment.round}")
@@ -822,9 +840,9 @@ class GameSection(backend.Section):
         enemy_protection_list = list((i.health, i.max_health) for i in enemy.items if i.equipped and i.itype == backend.System.ItemType.SHIELD)
         player_protection = (int(sum(prot[0] for prot in player_protection_list)), int(sum(prot[1] for prot in player_protection_list)))
         enemy_protection = (int(sum(prot[0] for prot in enemy_protection_list)), int(sum(prot[1] for prot in enemy_protection_list)))
-        print(f"You ({colorama.Fore.GREEN}{player.name}{colorama.Fore.RESET}) have: {(colorama.Fore.GREEN if player.health > 50 else colorama.Fore.RED) + colorama.Style.BRIGHT}{player.health}{colorama.Fore.RESET + colorama.Style.RESET_ALL}{colorama.Fore.BLUE}/{colorama.Fore.RESET}{colorama.Fore.GREEN}{player.max_health}{colorama.Fore.RESET} health"
+        print(f"You ({colorama.Fore.GREEN}{player.name}{colorama.Fore.RESET}) have: {(colorama.Fore.GREEN if player.health > 50 else colorama.Fore.RED) + colorama.Style.BRIGHT}{player.health}{colorama.Style.RESET_ALL}{colorama.Fore.BLUE}/{colorama.Fore.RESET}{colorama.Fore.GREEN}{player.max_health}{colorama.Fore.RESET} health"
               f" ({colorama.Fore.CYAN}{max(player_protection[0], 0)}/{player_protection[1]}{colorama.Fore.RESET} protection){" (on fire)" if player.fire_damage > 0 else ""}")
-        print(f"Enemy ({colorama.Fore.RED}{enemy.name}{colorama.Fore.RESET}) has: {(colorama.Fore.GREEN if enemy.health > 50 else colorama.Fore.RED) + colorama.Style.BRIGHT}{enemy.health}{colorama.Fore.RESET + colorama.Style.RESET_ALL}{colorama.Fore.BLUE}/{colorama.Fore.RESET}{colorama.Fore.GREEN}{enemy.max_health}{colorama.Fore.RESET} health"
+        print(f"Enemy ({colorama.Fore.RED}{enemy.name}{colorama.Fore.RESET}) has: {(colorama.Fore.GREEN if enemy.health > 50 else colorama.Fore.RED) + colorama.Style.BRIGHT}{enemy.health}{colorama.Style.RESET_ALL}{colorama.Fore.BLUE}/{colorama.Fore.RESET}{colorama.Fore.GREEN}{enemy.max_health}{colorama.Fore.RESET} health"
               f" ({colorama.Fore.CYAN}{max(enemy_protection[0], 0)}/{enemy_protection[1]}{colorama.Fore.RESET} protection){" (on fire)" if enemy.fire_damage > 0 else ""}")
     
     def render_items(self) -> Dict[str, backend.System.ItemProtocol]:
