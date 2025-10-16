@@ -1,6 +1,6 @@
 # What we can't see on screen
 
-from typing import Tuple, List, Dict, Optional, Any, Type, Self, TypedDict
+from typing import Tuple, List, Dict, Optional, Any, Self, TypedDict
 from enum import Enum, auto
 from names import generate_name
 from story import generate_story
@@ -36,19 +36,23 @@ class CONFIG: # We can configure this game here
             "enemy_critical_factor": 0.75,
             "enemy_encounters": {
                 1: (1, 1),
-                2: (1, 3),
-                3: (1, 4),
-                4: (1, 5),
-                5: (1, 5)
+                2: (2, 4),
+                3: (3, 5),
+                4: (4, 7),
+                5: (4, 8)
             },
             "rewards": {
                 2: {
-                    "points": 50,
-                    "exp": 0.5
+                    "points": 25,
+                    "exp": 0.3
                 },
                 3: {
-                    "points": 100,
+                    "points": 30,
                     "exp": 0.5
+                },
+                4: {
+                    "points": 35,
+                    "exp": 0.25
                 }
             }
         },
@@ -61,10 +65,10 @@ class CONFIG: # We can configure this game here
             "enemy_critical_factor": 1.0,
             "enemy_encounters": {
                 1: (1, 1),
-                2: (1, 3),
-                3: (1, 4),
-                4: (1, 5),
-                5: (1, 5)
+                2: (3, 5),
+                3: (3, 6),
+                4: (4, 6),
+                5: (4, 7)
             },
             "rewards": {
                 2: {
@@ -72,8 +76,12 @@ class CONFIG: # We can configure this game here
                     "exp": 0.25
                 },
                 3: {
-                    "points": 30,
-                    "exp": 0.25
+                    "points": 20,
+                    "exp": 0.35
+                },
+                4: {
+                    "points": 35,
+                    "exp": 0.15
                 }
             }
         },
@@ -86,10 +94,10 @@ class CONFIG: # We can configure this game here
             "enemy_critical_factor": 1.15,
             "enemy_encounters": {
                 1: (1, 1),
-                2: (1, 4),
-                3: (1, 6),
-                4: (1, 7),
-                5: (1, 7)
+                2: (4, 5),
+                3: (4, 6),
+                4: (5, 6),
+                5: (5, 7)
             },
             "rewards": {
                 2: {
@@ -99,6 +107,10 @@ class CONFIG: # We can configure this game here
                 3: {
                     "points": 15,
                     "exp": 0.15
+                },
+                4: {
+                    "points": 20,
+                    "exp": 0.20
                 }
             }
         }
@@ -268,7 +280,6 @@ class Game(System.System):
         self.save_handler: SaveHandler = SaveHandler()
         self.difficulty: Difficulty = Difficulty.Normal
         self.char_name: str = "Jim" 
-        self.save_file: str = ""
         self.player: Optional[Player] = None # Initalized later.
         self.environment: Optional[Environment] = None
     

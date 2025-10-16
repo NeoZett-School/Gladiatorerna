@@ -301,21 +301,40 @@ class IntelSection(backend.Section):
 
         # Items
         print("Items:")
-        for item in self.system.player.inventory.items:
-            if self.system.player:
-                owned = item in self.system.player.sys.items and item.owner == self.system.player.sys
-            print(f"{colorama.Fore.MAGENTA}{item.name}{colorama.Fore.RESET}"
-                  f"{f" ({colorama.Fore.YELLOW}{item.upgrades}{colorama.Fore.RESET})" \
-                  f" [{(colorama.Fore.GREEN if item.equipped and owned else colorama.Fore.RED) + colorama.Style.BRIGHT}{"Equipped" if item.equipped else "Unequipped" if owned else "Not owned"}{colorama.Style.RESET_ALL}]" if self.system.player else ""}" 
-                  f" - {colorama.Fore.BLUE}{item.desc}{colorama.Fore.RESET}"
-                  f" - {colorama.Fore.BLUE}{item.intel}{colorama.Fore.RESET}")
+        def print_items(items: List[backend.System.ItemProtocol]) -> None:
+            for item in items:
+                if self.system.player:
+                    owned = item in self.system.player.sys.items and item.owner == self.system.player.sys
+                print(f"{colorama.Fore.MAGENTA}{item.name}{colorama.Fore.RESET}"
+                    f"{f" ({colorama.Fore.YELLOW}{item.upgrades}{colorama.Fore.RESET})" \
+                    f" [{(colorama.Fore.GREEN if item.equipped and owned else colorama.Fore.RED) + colorama.Style.BRIGHT}{"Equipped" if item.equipped else "Unequipped" if owned else "Not owned"}{colorama.Style.RESET_ALL}]" if self.system.player else ""}" 
+                    f" - {colorama.Fore.BLUE}{item.desc}{colorama.Fore.RESET}")
+                separator = f"\n{colorama.Fore.GREEN} - {colorama.Fore.YELLOW}"
+                intel_raw = str(item.intel)  # Ensure it's a string
+
+                # Function to color digits
+                def color_numbers(text):
+                    # Match integers or floats (e.g., 12, 0.45, 123.456)
+                    pattern = r'\b\d+(?:\.\d+)?\b'
+                    return re.sub(pattern, lambda m: f"{colorama.Fore.BLUE}{m.group(0)}{colorama.Fore.YELLOW}", text)
+
+                # Build the formatted string
+                intel_text = f"{colorama.Fore.YELLOW}Intel:{separator}{color_numbers(intel_raw)}{colorama.Fore.RESET}"
+
+                # Apply the separator formatting
+                formatted_output = separator.join(intel_text.split(", "))
+                print(formatted_output)
+        if self.system.player:
+            print_items(self.system.player.inventory.items)
+        else: print_items(list(i() for i in ItemLibrary.items))
             
         # Stats
         print()
-        print("Player:")
+        print("Players:")
         if self.system.player:
             player = self.system.player.sys
             print(f"-- {colorama.Fore.YELLOW}{player.name}{colorama.Fore.RESET} --")
+            print(f"{colorama.Fore.MAGENTA}[ YOU ]{colorama.Fore.RESET}")
             exp_have = max(int(player.exp*10), 0)
             exp_need = 10 - exp_have
             items = {
@@ -332,7 +351,23 @@ class IntelSection(backend.Section):
             }
             for title, value in items.items():
                 print(f"{colorama.Fore.YELLOW}{title}{colorama.Fore.RESET}: {colorama.Fore.BLUE}{value}{colorama.Fore.RESET}")
-        else: print(f"{colorama.Fore.YELLOW}Player hasn't been made yet.{colorama.Fore.RESET}")
+            print()
+        
+        for name, data in backend.CONFIG.characters.items():
+            if self.system.player and self.system.player.sys.name == name: continue
+            print(f"-- {colorama.Fore.YELLOW}{name}{colorama.Fore.RESET} --")
+            items = {
+                # Title, value
+                "Max Health": f"{data["max_health"]}",
+                "Healing": f"{data["healing"]} seconds/hp",
+                "Base Attack": f"{data["base_attack"]}",
+                "Critical Chance": f"{data["critical_chance"]}",
+                "Critical Factor": f"{data["critical_factor"]}"
+            }
+            for title, value in items.items():
+                print(f"{colorama.Fore.YELLOW}{title}{colorama.Fore.RESET}: {colorama.Fore.BLUE}{value}{colorama.Fore.RESET}")
+            print()
+                
 
         print()
         print(f"{colorama.Fore.RED}0{colorama.Fore.RESET}: Go back")
@@ -747,15 +782,19 @@ class GameSection(backend.Section):
             # Some options are unchangeable after starting the game, like the character. 
             # Whilst some are only initialy created once.
 
+            difficulty = self.system.difficulty
+
             # Setup the player
             if not self.system.player: # Only initialize the player if it isn't already there
                 self.system.player = backend.Player(self.system.char_name)
                 player = self.system.player
                 player.inventory.weapons["Wooden Sword"].buy(player.sys)
                 player.inventory.armor["Wooden Armor"].buy(player.sys)
+                if difficulty == backend.Difficulty.Easy:
+                    player.inventory.weapons["Steel Sword"].buy(player.sys)
+                    player.inventory.armor["Steel Armor"].buy(player.sys)
 
             # Load the initial environment
-            difficulty = self.system.difficulty
             self.system.environment = backend.Environment(
                 self.system.player, 
                 backend.Enemy.generate_enemy(
