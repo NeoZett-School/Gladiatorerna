@@ -664,7 +664,7 @@ class LoadingSection(backend.Section):
     def on_render(self) -> None:
         super().init()
         print(f"\r{colorama.Fore.CYAN}Loading:{colorama.Fore.RESET} {colorama.Fore.GREEN + colorama.Style.BRIGHT}{self.count}%{colorama.Style.RESET_ALL}", end = "")
-        time.sleep(0.1)
+        time.sleep(0.025)
         self.count += 1
         if self.count > 100:
             backend.SectionManager.init_section(self.system, "Game")
