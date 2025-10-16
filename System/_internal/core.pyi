@@ -154,6 +154,14 @@ class ItemProtocol(Protocol):
     def upgrade_cost(self) -> int:
         """The cost for the next upgrade."""
         ...
+    @property
+    def minimal_level(self) -> int:
+        """The minimal level to buy this item."""
+        ...
+    @property
+    def owned(self) -> bool:
+        """Wheters the item is actually owned."""
+        ...
     def damage(self, damage: int) -> bool:
         """Damage this item."""
         ...

@@ -35,3 +35,5 @@ class ItemData(TypedDict):
     critical_damage: float
     fire_damage: float
     upgrades: int
+
+    minimal_level: int

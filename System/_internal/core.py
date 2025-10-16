@@ -172,6 +172,14 @@ class ItemProtocol(Protocol):
     def upgrade_cost(self) -> int:
         return int((self.cost if self.cost > 0 else 9) * (1 + self.upgrades) * 1.5)
     
+    @property
+    def minimal_level(self) -> int:
+        return int(self._data.get("minimal_level", 0))
+    
+    @property
+    def owned(self) -> bool:
+        return bool(self.owner) and self in self.owner.items
+    
     def damage(self, damage: int) -> None:
         new_health = self.health - damage
         self._data["health"] = int(new_health)

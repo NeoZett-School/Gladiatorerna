@@ -158,17 +158,17 @@ class ShopSection(backend.Section):
     class Weapons(Directory):
         def init(self) -> None:
             super().init()
-            self.items = [(n, i) for n, i in ItemLibrary.weapons.items() if not i in self.system.player.sys.items or not i.owner == self.system.player.sys]
+            self.items = [(n, i) for n, i in ItemLibrary.weapons.items() if not i.owned and i.minimal_level <= self.system.player.sys.level]
 
     class Armor(Directory): # Caching the items into a list that helps to unpack does also help with performance.
         def init(self) -> None:
             super().init()
-            self.items = [(n, i) for n, i in ItemLibrary.armor.items() if not i in self.system.player.sys.items or not i.owner == self.system.player.sys]
+            self.items = [(n, i) for n, i in ItemLibrary.armor.items() if not i.owned and i.minimal_level <= self.system.player.sys.level]
     
     def init(self) -> None:
         super().init()
         self.to_buy: Optional[backend.System.ItemProtocol] = None
-        self.items: int = list(i for i in ItemLibrary.items if not i in self.system.player.sys.items or not i.owner == self.system.player.sys)
+        self.items: int = list(i for i in ItemLibrary.items if not i.owned and i.minimal_level <= self.system.player.sys.level)
 
     def on_render(self) -> None:
         super().on_render()
@@ -210,7 +210,7 @@ class ShopSection(backend.Section):
     def render_items(self, points: int, items: List[Tuple[str, backend.System.ItemProtocol]]) -> Dict[str, backend.System.ItemProtocol]:
         processed = {}
         for i, (name, item) in enumerate(items):
-            if item in self.system.player.sys.items or item.owner == self.system.player.sys: continue
+            if item.owned or not item.minimal_level <= self.system.player.sys.level: continue
             print(f"{colorama.Fore.BLUE}{i+1}{colorama.Fore.RESET}: {colorama.Fore.MAGENTA}{name}{colorama.Fore.RESET} [{(colorama.Fore.GREEN if points >= item.cost else colorama.Fore.RED) + colorama.Style.BRIGHT}{item.cost}p{colorama.Fore.RESET + colorama.Style.RESET_ALL}] - {colorama.Fore.BLUE}{item.desc}{colorama.Fore.RESET}")
             processed[str(i+1)] = item
         return processed
@@ -390,17 +390,17 @@ class BlacksmithSection(backend.Section):
     class Weapons(Directory):
         def init(self) -> None:
             super().init()
-            self.items = [(n, i) for n, i in ItemLibrary.weapons.items() if i in self.system.player.sys.items and i.owner == self.system.player.sys]
+            self.items = [(n, i) for n, i in ItemLibrary.weapons.items() if i.owned]
 
     class Armor(Directory): # Caching the items into a list that helps to unpack does also help with performance.
         def init(self) -> None:
             super().init()
-            self.items = [(n, i) for n, i in ItemLibrary.armor.items() if i in self.system.player.sys.items and i.owner == self.system.player.sys]
+            self.items = [(n, i) for n, i in ItemLibrary.armor.items() if i.owned]
     
     def init(self) -> None:
         super().init()
         self.to_upgrade: Optional[backend.System.ItemProtocol] = None
-        self.items: int = list(i for i in ItemLibrary.items if i in self.system.player.sys.items and i.owner == self.system.player.sys)
+        self.items: int = list(i for i in ItemLibrary.items if i.owned)
 
     def on_render(self) -> None:
         super().on_render()
@@ -442,7 +442,7 @@ class BlacksmithSection(backend.Section):
     def render_items(self, points: int, items: List[Tuple[str, backend.System.ItemProtocol]]) -> Dict[str, backend.System.ItemProtocol]:
         processed = {}
         for i, (name, item) in enumerate(items):
-            if not item in self.system.player.sys.items or not item.owner == self.system.player.sys: continue
+            if not item.owned: continue
             print(f"{colorama.Fore.BLUE}{i+1}{colorama.Fore.RESET}: {colorama.Fore.MAGENTA}{name}{colorama.Fore.RESET} [{(colorama.Fore.GREEN if points >= item.upgrade_cost else colorama.Fore.RED) + colorama.Style.BRIGHT}{item.upgrade_cost}p{colorama.Fore.RESET + colorama.Style.RESET_ALL}] - {colorama.Fore.BLUE}{item.desc}{colorama.Fore.RESET}")
             processed[str(i+1)] = item
         return processed
