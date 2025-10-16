@@ -165,7 +165,6 @@ class Enemy(System.Handler): # The full enemy implementation.
             "critical_chance": 0.5,
             "critical_factor": difficulty.data.get("enemy_critical_factor", 1.0)
         })
-        self.inventory: ItemLibrary.Inventory = ItemLibrary.Inventory()
     
     def on_update(self) -> None:
         self.sys.update()
