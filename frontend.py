@@ -656,7 +656,7 @@ class SaveSection(backend.Section):
             processed[str(i+2)] = (f"{os.path.splitext(os.path.basename(file))[0]} - last saved: {last_saved}", file)
         return processed
 
-class Loading(backend.Section):
+class LoadingSection(backend.Section):
     def init(self) -> None:
         super().init()
         self.count: int = 0
@@ -873,6 +873,7 @@ class SectionLibrary:
         "Documentation": DocumentationSection(),
         "Save": SaveSection(),
         "Save.Save": SaveSection.Save(),
+        "Loading": LoadingSection(),
         "Game": GameSection(),
         "Game.Success": GameSection.Success(),
         "Game.Loss": GameSection.Loss()
