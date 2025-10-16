@@ -124,9 +124,9 @@ class ItemLibrary:
         armor: Dict[str, ItemProtocol]
 
         def __init__(self) -> None:
-            self.item = (i() for i in ItemLibrary.items) # Build inventory
-            self.weapons = {i.name: i for i in ItemLibrary.items if i.itype == ItemType.ATTACK}
-            self.armor = {i.name: i for i in ItemLibrary.items if i.itype == ItemType.SHIELD}
+            self.items = list(i() for i in ItemLibrary.items) # Build inventory
+            self.weapons = {i.name: i for i in self.items if i.itype == ItemType.ATTACK}
+            self.armor = {i.name: i for i in self.items if i.itype == ItemType.SHIELD}
 
     @classmethod
     def generate_weapon(cls, level: int) -> ItemProtocol:

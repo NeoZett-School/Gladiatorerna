@@ -8,5 +8,6 @@ if %errorlevel% neq 0 (
     echo.
     echo An error has occured. Press any key to close this console.
     echo.
+    pause >nul
 )
 exit /b %errorlevel%
