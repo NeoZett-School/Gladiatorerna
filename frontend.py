@@ -695,18 +695,47 @@ class SaveSection(backend.Section):
 class LoadingSection(backend.Section):
     def init(self) -> None:
         super().init()
-        self.count: int = 0
+        self.frames: int = 0
+        self.progression: int = 0
+        self.interval: float = 0.05
+        self.next_prog: float = time.monotonic() + self.interval
+        self.symbol: int = 0
+
+        self.loading_text: str = "-" * 10
+    
+    def on_update(self) -> None:
+        self.frames += 1
+        if self.frames % 5 == 0: # Performance!
+            current_time = time.monotonic()
+            if current_time >= self.next_prog:
+                self.next_prog = current_time + self.interval
+                self.progress()
+            if self.progression % 4 == 0:
+                self.increment_symbol()
 
     def on_render(self) -> None:
         super().init()
         print(f"{colorama.Fore.YELLOW}Bringing life to your gladiators... please wait.{colorama.Fore.RESET}")
         print()
-        print(f"{colorama.Fore.CYAN}Loading:{colorama.Fore.RESET} {colorama.Fore.GREEN + colorama.Style.BRIGHT}{self.count}%{colorama.Style.RESET_ALL}")
-        self.count += 1
-        time.sleep(0.025)
+        print(f"{colorama.Fore.CYAN}Loading:{colorama.Fore.RESET} {colorama.Fore.GREEN + colorama.Style.BRIGHT}{self.progression}% {colorama.Fore.BLUE + colorama.Style.DIM}{self.from_symbol()}{colorama.Style.RESET_ALL}")
+        print(f"[{self.loading_text}]")
+    
+    def increment_symbol(self) -> None:
+        self.symbol += 1
+        if self.symbol > 3:
+            self.symbol = 0
+    
+    def from_symbol(self) -> str:
+        return ["-", "\\", "|", "/"][self.symbol]
 
-        if self.count > 100:
+    def progress(self) -> None:
+        self.progression += 1
+        if self.progression > 100:
             backend.SectionManager.init_section(self.system, "Game")
+        else:
+            factor = (self.progression / 100)
+            count = int(10 * factor)
+            self.loading_text = f"{colorama.Fore.GREEN + colorama.Style.BRIGHT}{"-" * count}{colorama.Fore.YELLOW + colorama.Style.DIM}{"-" * (10 - count)}{colorama.Style.RESET_ALL}"
 
 class GameSection(backend.Section):
     class Directory(backend.Section):
