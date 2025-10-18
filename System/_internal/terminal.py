@@ -347,6 +347,10 @@ class Terminal:
                 Terminal.progress_bar(self.formatted_string, self.token, self.length, i, self.length)
                 for i in range(self.length + 1)
             ]
+        
+        def calc_index(self, has: int, need: int) -> int:
+            "Calculate what index is appropiate for the given corelation."
+            return int((has/need) * self.length)
 
         def set_index(self, index: int) -> None:
             """Set the current frame index."""

@@ -681,7 +681,7 @@ class LoadingSection(backend.Section):
         self.interval: float = 0.05
         self.next_prog: float = time.monotonic() + self.interval
         self.symbol: Terminal.AnimatedString = Terminal.AnimatedString(["-","\\","|","/","-"])
-        self.loading_text: str = "-" * 10
+        self.loading_bar: Terminal.ProgressBar = Terminal.ProgressBar("$gre$bri[has]$yel$dim[need]$res", "-", 10)
 
         self.text = ""
     
@@ -698,7 +698,7 @@ class LoadingSection(backend.Section):
                 f"$cyaLoading:$res " \
                 f"$gre$bri{self.progression}% " \
                 f"$blu$dim{self.symbol}$res " \
-                f"[{self.loading_text}]"
+                f"[{self.loading_bar.get_frame(self.loading_bar.calc_index(self.progression, 100))}]"
 
     def on_render(self) -> None:
         Terminal.print(
@@ -709,8 +709,6 @@ class LoadingSection(backend.Section):
         self.progression += 1
         if self.progression > 100:
             backend.SectionManager.init_section(self.system, "Game")
-        else:
-            self.loading_text = Terminal.progress_bar("$gre$bri[has]$yel$dim[need]$res", has=self.progression, need=100)
 
 class GameSection(backend.Section):
     class Directory(backend.Section):
