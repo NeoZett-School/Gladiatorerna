@@ -61,7 +61,7 @@ class FireBow(ItemProtocol):
             "attack_range": (5, 10),
             "critical_chance": 0.4,
             "critical_damage": 1.15,
-            "fire_damage": 20,
+            "fire_damage": 5,
             "minimal_level": 3
         })
     

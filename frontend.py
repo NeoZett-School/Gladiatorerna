@@ -840,7 +840,7 @@ class GameSection(backend.Section):
             if player_damage == 0: 
                 player_log = Terminal.format(f"You tried using: $mag{solution.name}$res. It is broken.")
         else: player_log = "You did nothing."
-        enemy_weapon = random.choices(enemy.equipped_weapons, list(abs(w.health) for w in enemy.equipped_weapons))[0]
+        enemy_weapon = random.choices(enemy.equipped_weapons, list(max(abs(w.health), 1) for w in enemy.equipped_weapons))[0]
         if max((max(enemy_weapon.health - 10, 0) / enemy_weapon.max_health) * self.system.difficulty.data.get("enemy_attack_chance", 0.85), 0.15) > random.uniform(0, 1): # We'll actually make it less likely for it to hit when the weapon has low health.
             enemy_critical, enemy_damage = enemy_weapon.use(player)
             enemy_log = Terminal.format(f"Enemy attacked using $mag{enemy_weapon.name}$res, dealing $red{enemy_damage}$res damage" \
