@@ -1,11 +1,12 @@
 # _internal should not be touched by external sources.
 # We let the internal systems easily access the global items.
-from .core import clear_screen, print, Player, Enemy, ItemProtocol, Handler, System
+from .core import Player, Enemy, ItemProtocol, Handler, System
 from .data import PlayerData, ItemData
 from .itemtypes import ItemType
+from .terminal import Terminal
 
 __all__ = (
-    "clear_screen",
+    "Terminal",
     "print",
     "Player", 
     "Enemy", 

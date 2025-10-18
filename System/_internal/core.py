@@ -3,7 +3,7 @@
 from typing import Tuple, List, Optional, Self, Protocol, runtime_checkable
 from .data import PlayerData, ItemData
 from .itemtypes import ItemType
-from .terminal import clear_screen
+from .terminal import Terminal
 import random
 import time
 
@@ -250,7 +250,7 @@ class System:
             handler.on_update()
 
     def render(self) -> None:
-        clear_screen()
+        Terminal.clear(False)
         for handler in self.handlers:
             handler.on_render()
 

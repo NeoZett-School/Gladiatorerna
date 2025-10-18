@@ -32,7 +32,7 @@ class Manager:
         def __enter__(self) -> None:
             self.active = True
         
-        def __exit__(self) -> None:
+        def __exit__(self, exc_type, exc_value, exc_traceback) -> None:
             self.active = False
         
         def format(self, text: str) -> str:
@@ -269,7 +269,7 @@ class Terminal:
         if not color:
             return text
         pattern = re.compile(cls.pattern)
-        return pattern.sub(lambda m: cls.ColorKeys.get(m.group(0), m.group(0)), text)
+        return pattern.sub(lambda m: str(cls.ColorKeys.get(m.group(0), m.group(0))), text)
     
     @staticmethod
     def progress_bar(
@@ -312,13 +312,13 @@ class Terminal:
         flush: bool = False,
         color: bool = False,
         clear_screen: Union[bool, Tuple[bool, bool]] = False,
-        additional_prompt_text: Optional[str] = None,
+        additional_prompt: Optional[str] = "",
         n: int = -1
     ) -> str:
         """Get input with optional formatting and clearing."""
         Terminal.print(*prompt, sep=sep, end=end, flush=flush, color=color, clear_screen=clear_screen)
         if n == -1:
-            return input(additional_prompt_text)
+            return input(additional_prompt or "")
         return sys.stdin.read(n)
     
     @classmethod
