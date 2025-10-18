@@ -696,7 +696,7 @@ class LoadingSection(backend.Section):
         self.progression: int = 0
         self.interval: float = 0.05
         self.next_prog: float = time.monotonic() + self.interval
-        self.symbol: int = 0
+        self.symbol: Terminal.AnimatedString = Terminal.AnimatedString(["-","\\","|","/","-"])
 
         self.loading_text: str = "-" * 10
     
@@ -708,7 +708,7 @@ class LoadingSection(backend.Section):
                 self.next_prog = current_time + self.interval
                 self.progress()
             if self.progression % 4 == 0:
-                self.increment_symbol()
+                self.symbol.next()
 
     def on_render(self) -> None:
         super().on_render()
@@ -716,17 +716,10 @@ class LoadingSection(backend.Section):
             f"\r$yelBringing life to your gladiators... please wait. "
             f"$cyaLoading:$res "
             f"$gre$bri{self.progression}% "
-            f"$blu$dim{self.from_symbol()}$res "
+            f"$blu$dim{self.symbol}$res "
             f"[{self.loading_text}]", color=True
         )
-    
-    def increment_symbol(self) -> None:
-        self.symbol += 1
-        if self.symbol > 3:
-            self.symbol = 0
-    
-    def from_symbol(self) -> str:
-        return ["-", "\\", "|", "/"][self.symbol]
+        time.sleep(self.interval * 0.25)
 
     def progress(self) -> None:
         self.progression += 1
