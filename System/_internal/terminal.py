@@ -1,71 +1,164 @@
 # I'm sorry. I had some fun with this one... overcomplicating it...
 
-from typing import Iterable, Tuple, List, Dict, Optional, Literal, Union, Self, TypeVar, overload
+from typing import Iterable, Tuple, List, Dict, Optional, Callable, Literal, Union, Self, TypeVar, Any, overload
 import colorama
 import sys
 import os
 import re
 
-__all__ = (
-    "Terminal"
-)
+__all__ = ("Terminal",)
 
 T = TypeVar("T", bound="Terminal.Color")
+ClearScreenArg = Union[bool, Tuple[bool, bool], Tuple[bool, bool, bool]]
 
 class Manager:
     class Environment:
-        def __init__(self, prefix: Optional["Terminal.Color"] = None, suffix: Optional["Terminal.Color"] = None):
+        class GlobalInterface: 
+            """Public interface for an active environment context."""
+
+            def __init__(self, env: "Manager.Environment") -> Self:
+                self._env: Manager.Environment = env
+            
+            @property
+            def active(self) -> bool:
+                return self._env.active
+            
+            @property
+            def prefix(self) -> "Terminal.Color":
+                return self._env.prefix_color
+            
+            @property
+            def suffix(self) -> "Terminal.Color":
+                return self._env.suffix_color
+            
+            @property
+            def formatted(self) -> List[str]:
+                return self._env.formatted[:]
+            
+            def format(self, text: str) -> str:
+                return self._env.format(text)
+            
+            def disable(self) -> None:
+                self._env.disable()
+
+        def __init__(
+            self, 
+            manager: "Manager", 
+            prefix: Optional["Terminal.Color"] = None, 
+            suffix: Optional["Terminal.Color"] = None
+        ) -> Self:
+            self.manager: Manager = manager
             self.prefix_color: Optional[Terminal.Color] = prefix
             self.suffix_color: Optional[Terminal.Color] = suffix
             self.active: bool = False
-
-            self.last_formated: Optional[str] = None
+            self.formatted: List[str] = []
         
         @property
         def prefix(self) -> str:
-            return "" if not self.prefix_color else self.prefix_color.ansi
+            return self.prefix_color.ansi if self.prefix_color else ""
         
         @property
         def suffix(self) -> str:
-            return "" if not self.suffix_color else self.suffix_color.ansi
+            return self.suffix_color.ansi if self.suffix_color else ""
         
-        def __enter__(self) -> None:
+        def enable(self) -> GlobalInterface:
+            if not self in self.manager.env_stack:
+                self.manager.env_stack.append(self)
             self.active = True
+            return self.GlobalInterface(self)
         
-        def __exit__(self, exc_type, exc_value, exc_traceback) -> None:
+        def disable(self) -> None:
+            if self in self.manager.env_stack:
+                self.manager.env_stack.remove(self)
             self.active = False
         
+        def __enter__(self) -> GlobalInterface:
+            return self.enable()
+        
+        def __exit__(self, *args) -> None:
+            self.disable()
+        
         def format(self, text: str) -> str:
-            self.last_formated = text # Let user know that we formated this
+            self.formatted.append(text)
             return self.prefix + text + self.suffix
 
     def __init__(self) -> Self:
-        self.env: Optional[Manager.Environment] = None
+        self.env_stack: List[Manager.Environment] = []
+        self.mode: Literal["Single", "Multiple"] = "Single"
     
     @property
     def active(self) -> bool:
-        return self.env and self.env.active
+        return any(env.active for env in self.env_stack)
+    
+    def disable(self) -> None:
+        """Disable all active environments."""
+        while self.env_stack:
+            env = self.env_stack.pop()
+            env.active = False
     
     def format(self, text: str) -> str:
+        """Apply formatting from the latest active environment. (Depends on mode)"""
         if not self.active:
             return text
-        return self.env.format(text)
+        match self.mode:
+            case "Single":
+                index = -1
+                while self.env_stack[index].active == False:
+                    index -= 1
+                text = self.env_stack[index].format(text)
+            case "Multiple":
+                for env in self.env_stack:
+                    if not env.active: continue
+                    text = env.format(text)
+        return text
     
     def new_env(self, prefix: Optional["Terminal.Color"] = None, suffix: Optional["Terminal.Color"] = None) -> Environment:
-        self.env = self.Environment(prefix, suffix)
-        return self.env
+        """Create a new environment."""
+        env = self.Environment(self, prefix, suffix)
+        self.env_stack.append(env)
+        return env
 
 class Terminal:
+    """A flexible terminal interface with colors, formatting, and environment stacks."""
+
     ColorKeys: Dict[str, "Terminal.Color"] = {}
-    _initialized: bool = False
     manager: Manager = Manager()
     pattern: str = r"(\$[a-z]{3})"
+    _initialized: bool = False
+    _regex: Optional[re.Pattern] = None
+
+    class Simple:
+        """Disconnected, minimal terminal I/O."""
+
+        @staticmethod
+        def space() -> None:
+            """Simple print a space in the terminal."""
+            sys.stdout.write("\n")
+        
+        @staticmethod
+        def print(*values: object, sep: Optional[str] = " ", end: Optional[str] = "\n", flush: bool = False) -> None:
+            """Simplified print method, accepts any objects."""
+            # Convert all values to strings like the builtin print
+            text = (sep or " ").join(str(v) for v in values) + (end or "\n")
+            sys.stdout.write(text)
+            if flush:
+                sys.stdout.flush()
+        
+        @staticmethod
+        def input(prompt: str, print_method: Optional[Callable[..., Any]] = None) -> str:
+            """Simplified input method."""
+            if print_method:
+                print_method(prompt)
+            return input("" if print_method else prompt)
+        
+        @staticmethod
+        def clear() -> None:
+            """Simply clears the screen. No ansi, no complexity. Simple and disconnected."""
+            os.system("cls" if os.name == "nt" else "clear")
     
     class Color:
-        """
-        Represents an ANSI color sequence.
-        You can construct directly, or use Color[...] lookup.
-        """
+        """Represents an ANSI color sequence."""
+
         def __init__(self, *ansi: str, tag: Optional[str] = None) -> Self:
             self.ansi: str = "".join(ansi)
             self.tag: Optional[str] = tag
@@ -82,11 +175,27 @@ class Terminal:
         def bg_rgb(cls, r: int, g: int, b: int) -> "Terminal.Color":
             return cls(f"\033[48;2;{r};{g};{b}m")
         
-        def compare(self, other: Union["Terminal.Color", str], using: Literal["Tag","Ansi","Both"]="Ansi") -> bool:
+        def paint(self, text: str) -> str:
+            return self.ansi + text
+        
+        def reset(self, text: str) -> str:
+            return text + self.ansi
+        
+        def compare(
+            self, other: Union["Terminal.Color", str], using: Literal["Tag", "Ansi", "Both"] = "Ansi"
+        ) -> bool:
             if isinstance(other, Terminal.Color):
-                return self.ansi == other.ansi if using == "Ansi" else self.tag == other.tag if using == "Tag" else self.ansi == other.ansi and self.tag == other.tag if using == "Both" else False
-            if isinstance(other, str):
-                return self.ansi == other if using == "Ansi" else self.tag == other if using == "Tag" else False
+                if using == "Ansi":
+                    return self.ansi == other.ansi
+                elif using == "Tag":
+                    return self.tag == other.tag
+                elif using == "Both":
+                    return self.ansi == other.ansi and self.tag == other.tag
+            elif isinstance(other, str):
+                if using == "Ansi":
+                    return self.ansi == other
+                elif using == "Tag":
+                    return self.tag == other
             return False
         
         @classmethod
@@ -108,19 +217,23 @@ class Terminal:
                 return self.ansi == other
             return NotImplemented
 
-        def __add__(self, other: Union[str, "Terminal.Color", Iterable[Union[str, "Terminal.Color"]]]) -> "Terminal.Color":
+        def __add__(
+            self, other: Union[str, "Terminal.Color", Iterable[Union[str, "Terminal.Color"]]]
+        ) -> "Terminal.Color":
             if isinstance(other, Iterable) and not isinstance(other, (str, bytes)):
                 return self.combine(self, *other)
             return self.combine(self, other)
 
         # enable `Terminal.Color["$gre"]`
-        def __class_getitem__(cls, key: Union[Tuple[Literal["Tag","ColorKey","Ansi"], str], str]) -> "Terminal.Color":
+        def __class_getitem__(
+            cls, key: Union[Tuple[Literal["Tag","ColorKey","Ansi"], str], str]
+        ) -> "Terminal.Color":
             if not Terminal._initialized:
                 Terminal.colorama_init()
 
             if isinstance(key, str):
                 if key not in Terminal.ColorKeys:
-                    raise KeyError(f"Color key {value!r} not found.")
+                    raise KeyError(f"Color key {key!r} not found.")
                 return Terminal.ColorKeys[key]
 
             mode, value = key
@@ -135,7 +248,9 @@ class Terminal:
                 return cls(value)
             raise KeyError(f"Invalid mode {mode!r} for Color lookup")
     
-    class IOString: # This string is a io (input/output) string
+    class IOString: 
+        """I/O string wrapper that can use Terminal print/input methods."""
+
         def __init__(self, value: str = "") -> Self:
             self.value: str = value
         
@@ -152,21 +267,32 @@ class Terminal:
             clear_screen: Union[bool, Tuple[bool, bool]] = False,
             input_text: Optional[str] = None,
             n: int = -1
-        ) -> None: # We may change it on input
-            self.value = Terminal.input(*prompt, sep=sep, end=end, flush=flush, color=color, clear_screen=clear_screen, input_text=input_text, n=n)
+        ) -> None: 
+            self.value = Terminal.input(
+                *prompt, 
+                sep=sep, 
+                end=end, 
+                flush=flush, 
+                color=color, 
+                clear_screen=clear_screen, 
+                input_text=input_text, 
+                n=n
+            )
 
         def print(
             self, 
-            before: str, after: str, 
+            *prefix_suffix: str,  
             sep: Optional[str] = " ", 
             end: Optional[str] = "\n", 
             flush: bool = False,
             color: bool = False,
             clear_screen: Union[bool, Tuple[bool, bool]] = False,
         ) -> None:
-            Terminal.print(before, self, after, sep=sep, end=end, flush=flush, color=color, clear_screen=clear_screen)
+            before, after = (prefix_suffix + ("", ""))[:2]
+            Terminal.print(self, sep=sep, end=end, flush=flush, color=color, clear_screen=clear_screen, prefix=before, suffix=after)
     
-    class AnimatedString(IOString): # This String is an animated string
+    class AnimatedString(IOString): 
+        """A string that cycles through multiple frames for animation."""
         def __init__(self, frames: List[str], init: int = 0) -> Self:
             self.frames: List[str] = frames
             self.index: int = init
@@ -179,12 +305,88 @@ class Terminal:
             return self.frames[self.index]
         
         def next(self) -> None:
-            self.index += 1
-            if self.index > len(self.frames) - 1:
-                self.index = 0
+            """Advance to the next frame, looping around if needed."""
+            self.index = (self.index + 1) % len(self.frames)
+        
+        def input(
+            self,
+            *prompt: object,
+            sep: Optional[str] = " ",
+            end: Optional[str] = "",
+            flush: bool = False,
+            color: bool = False,
+            clear_screen: Union[bool, Tuple[bool, bool]] = False,
+            input_text: Optional[str] = None,
+            n: int = -1
+        ) -> None:
+            """Replace current frame with user input."""
+            self.frames[self.index] = Terminal.input(
+                *prompt, 
+                sep=sep, 
+                end=end, 
+                flush=flush, 
+                color=color, 
+                clear_screen=clear_screen, 
+                input_text=input_text, 
+                n=n
+            )
+
+    class ProgressBar(AnimatedString):
+        """Animated progress bar that precomputes frames for efficiency."""
+
+        def __init__(self, formatted_string: str, token: str, length: int) -> Self:
+            super().__init__([])
+            self.formatted_string: str = formatted_string
+            self.token: str = token
+            self.length: int = length
+            self.generate()
+        
+        def generate(self) -> None:
+            """Generate all frames of the progress bar."""
+            self.frames = [
+                Terminal.progress_bar(self.formatted_string, self.token, self.length, i, self.length)
+                for i in range(self.length + 1)
+            ]
+
+        def set_index(self, index: int) -> None:
+            """Set the current frame index."""
+            self.index = max(0, min(index, len(self.frames) - 1))
+        
+        def prev(self) -> None:
+            """Move to the previous frame, looping around if needed."""
+            self.index = (self.index - 1) % len(self.frames)
+        
+        def get_frame(self, index: int) -> str:
+            """Return a specific frame without changing the current index."""
+            return self.frames[index]
+        
+        def print_frame(
+            self, 
+            *prefix_suffix: str, 
+            index: int = 0,
+            sep: Optional[str] = " ", 
+            end: Optional[str] = "\n", 
+            flush: bool = False,
+            color: bool = False,
+            clear_screen: Union[bool, Tuple[bool, bool]] = False,
+        ) -> None:
+            """Print a specific frame with optional prefix/suffix."""
+            before, after = (prefix_suffix + ("", ""))[:2]
+            Terminal.print(self.frames[index], sep=sep, end=end, flush=flush, color=color, clear_screen=clear_screen, prefix=before, suffix=after)
+
+    @classmethod
+    def init(cls) -> None:
+        cls.colorama_init()
+        cls.regex_init()
+    
+    @classmethod
+    def deinit(cls) -> None:
+        cls.colorama_deinit()
+        cls.ColorKeys.clear()
 
     @classmethod
     def colorama_init(cls) -> None:
+        if cls._initialized: return
         colorama.init()
         cls.Fore = colorama.Fore
         cls.Style = colorama.Style
@@ -207,8 +409,33 @@ class Terminal:
         cls._initialized = True
     
     @classmethod
+    def colorama_deinit(cls) -> None:
+        colorama.deinit()
+        for color in [
+            cls.Color(cls.Fore.BLACK, tag="$bla"),
+            cls.Color(cls.Fore.BLUE, tag="$blu"),
+            cls.Color(cls.Fore.CYAN, tag="$cya"),
+            cls.Color(cls.Fore.GREEN, tag="$gre"),
+            cls.Color(cls.Fore.MAGENTA, tag="$mag"),
+            cls.Color(cls.Fore.RED, tag="$red"),
+            cls.Color(cls.Fore.WHITE, tag="$whi"),
+            cls.Color(cls.Fore.YELLOW, tag="$yel"),
+            cls.Color(cls.Style.BRIGHT, tag="$bri"),
+            cls.Color(cls.Style.DIM, tag="$dim"),
+            cls.Color(cls.Style.RESET_ALL, tag="$res")
+        ]: cls.ColorKeys.pop(color.tag)
+    
+    @classmethod
+    def regex_init(cls) -> None:
+        cls._regex = re.compile(cls.pattern)
+    
+    @classmethod
     def new_env(cls, prefix: Optional["Terminal.Color"] = None, suffix: Optional["Terminal.Color"] = None) -> Manager.Environment:
         return cls.manager.new_env(prefix, suffix)
+    
+    @classmethod
+    def set_env_mode(cls, mode: Literal["Single", "Multiple"] = "Single") -> None:
+        cls.manager.mode = mode
     
     @overload
     @staticmethod
@@ -272,19 +499,26 @@ class Terminal:
     def format(
         cls, *values: object,
         sep: Optional[str] = " ", end: Optional[str] = "",
-        color: bool = True
+        color: bool = True, prefix: str = "", suffix: str = ""
     ) -> str:
+        """Format values with optional color substitution."""
         if color and not cls._initialized:
             cls.colorama_init()
-        text = cls.manager.format((sep or " ").join(map(str, values)) + (end or ""))
+
+        suffix = suffix + (end or "")
+        text = cls.manager.format((sep or " ").join(map(str, values)))
         if not color:
-            return text
-        pattern = re.compile(cls.pattern)
-        return pattern.sub(lambda m: str(cls.ColorKeys.get(m.group(0), m.group(0))), text)
+            return prefix + text + suffix
+        
+        if not cls._regex:
+            cls.regex_init()
+
+        formatted = cls._regex.sub(lambda m: str(cls.ColorKeys.get(m.group(0), m.group(0))), text)
+        return prefix + formatted + suffix
     
     @staticmethod
     def progress_bar(
-        formatted_string: str = "[had]|[need]",
+        formatted_string: str = "[had]|[need]|[prog]%",
         token: str = "-", length: int = 10,
         has: float = 0, need: float = 10,
         end: Optional[str] = "", color: bool = True
@@ -292,7 +526,7 @@ class Terminal:
         text = Terminal.format(formatted_string, end=end, color=color)
         factor = has / need if need else 0
         progress = int(length * factor)
-        return text.replace("[has]", token * progress).replace("[need]", token * (length - progress))
+        return text.replace("[has]", token * progress).replace("[need]", token * (length - progress)).replace("[prog]", str(int(factor * 100)))
     
     @staticmethod
     def print(
@@ -301,16 +535,24 @@ class Terminal:
         end: Optional[str] = "\n",
         flush: bool = False,
         color: bool = False,
-        clear_screen: Union[bool, Tuple[bool, bool]] = False
+        clear_screen: ClearScreenArg = False,
+        prefix: str = "",
+        suffix: str = "",
     ) -> None:
-        """Print the given values onto the screen."""
+        """
+        Print values to the terminal with optional formatting.
+
+        Supports:
+        - Color tags (like $red)
+        - Prefix/suffix
+        - Screen clearing
+        """
         if clear_screen:
             if isinstance(clear_screen, tuple) and clear_screen[0]:
-                Terminal.clear(clear_screen[1])
+                Terminal.clear(ansi=clear_screen[1], flush=clear_screen[2] if len(clear_screen) > 2 else True)
             elif isinstance(clear_screen, bool):
-                Terminal.clear(False)
-
-        text = Terminal.format(*values, sep=sep, end=end, color=color)
+                Terminal.clear(ansi=False)
+        text = Terminal.format(*values, sep=sep, end=end, color=color, prefix=prefix, suffix=suffix)
         sys.stdout.write(text)
         if flush:
             sys.stdout.flush()
@@ -322,14 +564,23 @@ class Terminal:
         end: Optional[str] = "",
         flush: bool = False,
         color: bool = False,
-        clear_screen: Union[bool, Tuple[bool, bool]] = False,
-        additional_prompt: Optional[str] = "",
+        clear_screen: ClearScreenArg = False,
+        input_text: Optional[str] = "",
         n: int = -1
     ) -> str:
-        """Get input with optional formatting and clearing."""
-        Terminal.print(*prompt, sep=sep, end=end, flush=flush, color=color, clear_screen=clear_screen)
+        """
+        Display a prompt and read user input.
+
+        Supports:
+        - Color tags
+        - Screen clearing
+        - Prefix/suffix through Terminal.print
+        - Reading a fixed number of characters via `n`
+        """
+        if prompt: # We may only use input_text
+            Terminal.print(*prompt, sep=sep, end=end, flush=flush, color=color, clear_screen=clear_screen)
         if n == -1:
-            return input(additional_prompt or "")
+            return input(input_text or "")
         return sys.stdin.read(n)
     
     @classmethod
@@ -337,3 +588,19 @@ class Terminal:
         """Immediately set console color without newline."""
         sys.stdout.write(str(color))
         sys.stdout.flush()
+    
+    @staticmethod
+    def log(level: str, *msg, color=True):
+        prefix = f"[{level.upper()}]"
+        if color:
+            prefix = {
+                "INFO": "$blu",
+                "WARN": "$yel",
+                "ERROR": "$red"
+            }.get(level.upper(), "") + prefix + "$res"
+        Terminal.print(prefix, *msg, color=color)
+    
+    @staticmethod
+    def space() -> None:
+        """Simple print a space in the terminal."""
+        Terminal.Simple.space()

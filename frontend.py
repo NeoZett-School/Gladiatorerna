@@ -15,7 +15,7 @@ import re
 if not __name__ == "__main__":
     exit() # If this file was not run directly, we can simply exit like normal before anything get run.
 
-Terminal.colorama_init() # Initialize colorama
+Terminal.init() # Initialize the terminal (including colorama)
 
 Terminal.print("Loading... (Creating Objects)", end="\r")
 
