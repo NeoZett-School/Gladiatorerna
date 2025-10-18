@@ -3,23 +3,17 @@
 from typing import Tuple, List, Optional, Self, Protocol, runtime_checkable
 from .data import PlayerData, ItemData
 from .itemtypes import ItemType
+from .stdout import clear_screen
 import random
 import time
-import os
 
 __all__ = (
-    "clear_screen",
     "Player",
     "Enemy",
     "ItemProtocol",
     "Handler",
     "System"
 )
-
-def clear_screen():
-    if os.name == "nt": # Windows
-        os.system("cls")
-    else: os.system("clear")
 
 class Player:
     def __init__(self, _data: Optional[PlayerData] = None) -> Self:

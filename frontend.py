@@ -1,14 +1,16 @@
 # What we can see on screen
 import colorama
 
-print("Loading...", end="\r")
+print("Loading... (Bootup)", end="\r")
 
 from typing import Tuple, List, Dict, Optional, Self, Any
 from items import ItemLibrary # Import the item library
+from System import print
 import backend # Import the backend
 import datetime
 import random
 import time
+import sys
 import os
 import re
 
@@ -17,12 +19,14 @@ if not __name__ == "__main__":
 
 colorama.init() # Initialize colorama
 
+print("Loading... (Creating Objects)", end="\r")
+
 class MenuSection(backend.Section): # We create a section for the menu
     def on_render(self) -> None: # On every render, we do...
         super().on_render() # Firstly, run the internal functionality from the parenting class
         print(f"Welcome to {colorama.Fore.CYAN + colorama.Style.BRIGHT}Gladiatorerna{colorama.Style.RESET_ALL}!")
         if not self.system.player:
-            print()
+            print("")
             print(f"{colorama.Style.BRIGHT}Before{colorama.Style.RESET_ALL} you {colorama.Fore.GREEN}Start{colorama.Style.RESET_ALL}, check that you have chosen"
                   f" your character in the {colorama.Fore.CYAN}Settings{colorama.Fore.RESET}.")
             print(f"The {colorama.Fore.MAGENTA}Shop{colorama.Fore.RESET} and {colorama.Fore.CYAN}Inventory{colorama.Fore.RESET}"
@@ -30,9 +34,9 @@ class MenuSection(backend.Section): # We create a section for the menu
             print("has been chosen. Once you have started, you can go back and buy new gear.")
             print("To do this, open the store. Then, you can go back into the battlefield, selecting"
                   f" {colorama.Fore.GREEN}Start{colorama.Fore.RESET}.")
-        print()
+        print("")
         print(f"Current time is: {colorama.Fore.YELLOW}{datetime.datetime.now().strftime("%H:%M")}{colorama.Fore.RESET}")
-        print()
+        print("")
         print("Where would you like to go?")
         options = {
             # id, title, section
@@ -145,10 +149,10 @@ class ShopSection(backend.Section):
             super().on_render()
             self.shop.render_title()
             points = int(self.system.player.sys.points)
-            print()
+            print("")
             self.shop.render_points(points)
             self.shop.render_count(len(self.items))
-            print()
+            print("")
             print(f"{colorama.Fore.RED}0{colorama.Fore.RESET}: Go back")
             options = self.shop.render_items(points, self.items)
             solution = input("Select one item you want to buy: ").lower().strip()
@@ -329,7 +333,7 @@ class IntelSection(backend.Section):
         else: print_items(list(i() for i in ItemLibrary.items))
         
         # Stats
-        print()
+        print("")
         print("Players:")
         if self.system.player:
             player = self.system.player.sys
@@ -351,7 +355,7 @@ class IntelSection(backend.Section):
             }
             for title, value in items.items():
                 print(f"{colorama.Fore.YELLOW}{title}{colorama.Fore.RESET}: {colorama.Fore.BLUE}{value}{colorama.Fore.RESET}")
-            print()
+            print("")
         
         for name, data in backend.CONFIG.characters.items():
             if self.system.player and self.system.player.sys.name == name: continue
@@ -366,10 +370,10 @@ class IntelSection(backend.Section):
             }
             for title, value in items.items():
                 print(f"{colorama.Fore.YELLOW}{title}{colorama.Fore.RESET}: {colorama.Fore.BLUE}{value}{colorama.Fore.RESET}")
-            print()
+            print("")
                 
 
-        print()
+        print("")
         print(f"{colorama.Fore.RED}0{colorama.Fore.RESET}: Go back")
         solution = input("Select one option: ").lower().strip()
         if solution == "0": 
@@ -412,10 +416,10 @@ class BlacksmithSection(backend.Section):
             super().on_render()
             self.blacksmith.render_title()
             points = int(self.system.player.sys.points)
-            print()
+            print("")
             self.blacksmith.render_points(points)
             self.blacksmith.render_count(len(self.items))
-            print()
+            print("")
             print(f"{colorama.Fore.RED}0{colorama.Fore.RESET}: Go back")
             options = self.blacksmith.render_items(points, self.items)
             solution = input("Select one item you want to upgrade: ").lower().strip()
@@ -450,10 +454,10 @@ class BlacksmithSection(backend.Section):
             return
 
         self.render_title()
-        print()
+        print("")
         self.render_points(int(self.system.player.sys.points))
         self.render_count(len(self.items))
-        print()
+        print("")
         options = {
             # id, title, section
             "1": (f"{colorama.Fore.RED}Weapons{colorama.Fore.RESET}", "Blacksmith.Weapons"),
@@ -517,7 +521,7 @@ class AboutSection(backend.Section):
         super().on_update()
         for text in self.page:
             print(text)
-        print()
+        print("")
         print(f"{colorama.Fore.RED}0{colorama.Fore.RESET}: Go back")
         print(f"{colorama.Fore.BLUE}1{colorama.Fore.RESET}: Next page")
         solution = input("Select one option: ").lower().strip()
@@ -610,7 +614,7 @@ class DocumentationSection(backend.Section):
         super().on_update()
         for text in self.page:
             print(text)
-        print()
+        print("")
         print(f"{colorama.Fore.RED}0{colorama.Fore.RESET}: Go back")
         print(f"{colorama.Fore.BLUE}1{colorama.Fore.RESET}: Next page")
         solution = input("Select one option: ").lower().strip()
@@ -714,11 +718,14 @@ class LoadingSection(backend.Section):
                 self.increment_symbol()
 
     def on_render(self) -> None:
-        super().init()
-        print(f"{colorama.Fore.YELLOW}Bringing life to your gladiators... please wait.{colorama.Fore.RESET}")
-        print()
-        print(f"{colorama.Fore.CYAN}Loading:{colorama.Fore.RESET} {colorama.Fore.GREEN + colorama.Style.BRIGHT}{self.progression}% {colorama.Fore.BLUE + colorama.Style.DIM}{self.from_symbol()}{colorama.Style.RESET_ALL}")
-        print(f"[{self.loading_text}]")
+        super().on_render()
+        print(
+            f"\r{colorama.Fore.YELLOW}Bringing life to your gladiators... please wait. "
+            f"{colorama.Fore.CYAN}Loading:{colorama.Fore.RESET} "
+            f"{colorama.Fore.GREEN + colorama.Style.BRIGHT}{self.progression}% "
+            f"{colorama.Fore.BLUE + colorama.Style.DIM}{self.from_symbol()}{colorama.Style.RESET_ALL} "
+            f"[{self.loading_text}]"
+        )
     
     def increment_symbol(self) -> None:
         self.symbol += 1
@@ -761,7 +768,7 @@ class GameSection(backend.Section):
                 if not self.loss:
                     print(f"{colorama.Fore.YELLOW}{reward}{colorama.Fore.RESET} {colorama.Fore.GREEN + colorama.Style.BRIGHT}+{amount}{colorama.Style.RESET_ALL}")
                 else:print(f"{colorama.Fore.YELLOW}{reward}{colorama.Fore.RESET} {colorama.Fore.RED + colorama.Style.BRIGHT}-{abs(amount)}{colorama.Style.RESET_ALL}")
-            print()
+            print("")
             options = {
                 # id, title, code
                 "1": (f"{colorama.Fore.GREEN + colorama.Style.BRIGHT}Yes{colorama.Style.RESET_ALL}", "Y"),
@@ -839,7 +846,7 @@ class GameSection(backend.Section):
     def on_render(self) -> None:
         super().on_render()
         print(f"---- {{{colorama.Fore.CYAN + colorama.Style.BRIGHT}GLADIATORERNA{colorama.Style.RESET_ALL}}} ----")
-        print()
+        print("")
         self.print_enemy()
         print(f"Round: {self.system.environment.round}")
         if self.log:
@@ -847,11 +854,11 @@ class GameSection(backend.Section):
             self.print_log()
         print()
         self.print_stats()
-        print()
+        print("")
         print(f"{colorama.Fore.LIGHTYELLOW_EX}{self.system.environment.next}{colorama.Fore.RESET}")
-        print()
+        print("")
         print(self.enemy_attack)
-        print()
+        print("")
         print("What do you do?")
         options = self.render_items()
         print(f"{colorama.Fore.RED}0{colorama.Fore.RESET}: Go back")
@@ -924,6 +931,8 @@ class GameSection(backend.Section):
             processed[str(i+1)] = item
         return processed
 
+print("Loading... (New Objects)", end="\r")
+
 class SectionLibrary: 
     # We create all sections and load them one by one.
     sections: Dict[str, backend.Section] = {
@@ -958,6 +967,8 @@ class SectionLibrary:
             backend.SectionManager.load_section(name, section)
 
 SectionLibrary.load()
+
+print("Loading... (Startng)", end="\r")
 
 game = backend.Game()
 backend.SectionManager.init_section(game, "Menu")
