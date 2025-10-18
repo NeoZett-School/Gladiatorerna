@@ -719,7 +719,6 @@ class LoadingSection(backend.Section):
             f"$blu$dim{self.symbol}$res "
             f"[{self.loading_text}]", color=True
         )
-        time.sleep(self.interval * 0.25)
 
     def progress(self) -> None:
         self.progression += 1

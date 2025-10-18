@@ -210,12 +210,23 @@ class Terminal:
     def new_env(cls, prefix: Optional["Terminal.Color"] = None, suffix: Optional["Terminal.Color"] = None) -> Manager.Environment:
         return cls.manager.new_env(prefix, suffix)
     
+    @overload
     @staticmethod
-    def clear(ansi: bool = False) -> None:
+    def clear(*, ansi: Literal[False] = False) -> None:
+        ...
+    
+    @overload
+    @staticmethod
+    def clear(*, ansi: Literal[True], flush: bool = True) -> None:
+        ...
+    
+    @staticmethod
+    def clear(*, ansi: bool = False, flush: bool = True) -> None:
         """Clears the screen (cross-platform)."""
         if ansi:
             sys.stdout.write("\033[2J\033[H")
-            sys.stdout.flush()
+            if flush:
+                sys.stdout.flush()
         else:
             os.system("cls" if os.name == "nt" else "clear")
     

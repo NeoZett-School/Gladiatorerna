@@ -250,7 +250,7 @@ class System:
             handler.on_update()
 
     def render(self) -> None:
-        Terminal.clear(False)
+        Terminal.clear()
         for handler in self.handlers:
             handler.on_render()
 
