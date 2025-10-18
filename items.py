@@ -54,9 +54,9 @@ class FireBow(ItemProtocol):
         super().__init__({
             "name": "Fire Bow",
             "desc": "A strong, dangerous bow. This bow does not only deal, damage. But also -- procedually -- fire damage!",
-            "intel": "15 Cost, 80 Item health, 0.2 second repair time, 5 to 10 damage, 40% critical, 115% critical damage, 20 fire damage, 3 minimal level",
+            "intel": "15 Cost, 5 Item health, 0.2 second repair time, 5 to 10 damage, 40% critical, 115% critical damage, 20 fire damage, 3 minimal level",
             "cost": 15,
-            "max_health": 80,
+            "max_health": 5,
             "reapair_time": 0.2,
             "attack_range": (5, 10),
             "critical_chance": 0.4,
