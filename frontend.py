@@ -21,7 +21,6 @@ Terminal.print("Loading... (Creating Objects)", end="\r")
 
 class MenuSection(backend.Section): # We create a section for the menu
     def on_render(self) -> None: # On every render, we do...
-        super().on_render() # Firstly, run the internal functionality from the parenting class
         Terminal.print(f"Welcome to $cya$briGladiatorerna$res!", color=True)
         if not self.system.player:
             Terminal.print("")
@@ -66,7 +65,6 @@ class MenuSection(backend.Section): # We create a section for the menu
 
 class SettingsSection(backend.Section): # Settings.
     def on_render(self) -> None:
-        super().on_render()
         print("Options:")
         options = {
             # id, title, current value
@@ -115,12 +113,11 @@ class ShopSection(backend.Section):
             self.shop: "ShopSection" = SectionLibrary.sections["Shop"]
         
         def on_render(self) -> None:
-            super().on_render()
             item = self.shop.to_buy
             options = {
                 # id, title, code
                 "1": (Terminal.format("$gre$briYes$res"), "Y"),
-                "2": (Terminal.format("$red$bliNo$res"), "N")
+                "2": (Terminal.format("$red$briNo$res"), "N")
             }
             Terminal.print(f"Are you sure you want to buy $mag$bri{item.name}$res?", color=True)
             for k, v in options.items():
@@ -141,7 +138,6 @@ class ShopSection(backend.Section):
             self.shop: "ShopSection" = SectionLibrary.sections["Shop"]
 
         def on_render(self) -> None:
-            super().on_render()
             self.shop.render_title()
             points = int(self.system.player.sys.points)
             Terminal.print("")
@@ -175,8 +171,6 @@ class ShopSection(backend.Section):
         self.items: int = list(i for i in self.system.player.inventory.items if not i.owned and i.minimal_level <= self.system.player.sys.level)
 
     def on_render(self) -> None:
-        super().on_render()
-
         if not self.system.player: # We are not initialized yet!
             backend.SectionManager.init_section(self.system, "Menu")
             return
@@ -215,7 +209,7 @@ class ShopSection(backend.Section):
         processed = {}
         for i, item in enumerate(items):
             if item.owned or not item.minimal_level <= self.system.player.sys.level: continue
-            Terminal.print(f"$blu{i+1}$res: $mag{item.name}$res [{("$res" if points >= item.cost else "$red") + "$bri"}{item.cost}p$res] - $blu{item.desc}$res", color=True)
+            Terminal.print(f"$blu{i+1}$res: $mag{item.name}$res [{("$gre" if points >= item.cost else "$red") + "$bri"}{item.cost}p$res] - $blu{item.desc}$res", color=True)
             processed[str(i+1)] = item
         return processed
 
@@ -228,7 +222,6 @@ class InventorySection(backend.Section):
             self.inv: "InventorySection" = SectionLibrary.sections["Inventory"]
 
         def on_render(self) -> None:
-            super().on_render()
             self.inv.render_title()
             Terminal.print()
             self.inv.render_count(len(self.items))
@@ -254,8 +247,6 @@ class InventorySection(backend.Section):
             self.items = [(n, i) for n, i in self.system.player.inventory.armor.items() if i.owned]
 
     def on_render(self) -> None:
-        super().on_render()
-
         if not self.system.player: # We are not initialized yet!
             backend.SectionManager.init_section(self.system, "Menu")
             return
@@ -296,7 +287,6 @@ class InventorySection(backend.Section):
 
 class IntelSection(backend.Section):
     def on_render(self) -> None:
-        super().on_render()
 
         # Items
         Terminal.print("Items:")
@@ -308,7 +298,7 @@ class IntelSection(backend.Section):
                     f"{f" ($yel{item.upgrades}$res)" \
                     f" [{("$gre" if item.equipped and owned else "$red") + "$bri"}{"Equipped" if item.equipped else "Unequipped" if owned else "Not owned"}$res]" if self.system.player else ""}" 
                     f" - $blu{item.desc}$res", color=True)
-                separator = f"\n$res - $yel"
+                separator = f"\n$blu - $yel"
                 intel_raw = str(item.intel)  # Ensure it's a string
 
                 # Function to color digits
@@ -318,7 +308,7 @@ class IntelSection(backend.Section):
                     return re.sub(pattern, lambda m: f"$blu{m.group(0)}$yel", text)
 
                 # Build the formatted string
-                intel_text = f"$yelIntel:{separator}{color_numbers(intel_raw)}$res"
+                intel_text = f"$yel{separator[1:]}{color_numbers(intel_raw)}$res\n"
 
                 # Apply the separator formatting
                 formatted_output = separator.join(intel_text.split(", "))
@@ -338,7 +328,7 @@ class IntelSection(backend.Section):
                 # Title, value
                 "Points": f"{int(player.points)}p",
                 "Level": f"{player.level}",
-                "Exp": f"{Terminal.progress_bar("$yel[had]$blu[need]$res", has=player.exp, need=1.0)} ({int(player.exp*100)}%)",
+                "Exp": f"{Terminal.progress_bar("$yel[has]$blu[need]$res", has=player.exp, need=1.0)} ({int(player.exp*100)}%)",
                 "Max Health": f"{player.max_health}",
                 "Healing": f"{player.healing} seconds/hp",
                 "Base Attack": f"{player.base_attack}",
@@ -440,8 +430,6 @@ class BlacksmithSection(backend.Section):
         self.items: int = list(i for i in self.system.player.inventory.items if i.owned)
 
     def on_render(self) -> None:
-        super().on_render()
-
         if not self.system.player: # We are not initialized yet!
             backend.SectionManager.init_section(self.system, "Menu")
             return
@@ -511,7 +499,6 @@ class AboutSection(backend.Section):
         return f"$redPage {self.index} not found.$res"
     
     def on_render(self) -> None:
-        super().on_update()
         for text in self.page:
             Terminal.print(text, color=True)
         Terminal.print("")
@@ -604,7 +591,6 @@ class DocumentationSection(backend.Section):
         return f"$redPage {self.index} not found.$res"
     
     def on_render(self) -> None:
-        super().on_update()
         for text in self.page:
             Terminal.print(text, color=True)
         Terminal.print("")
@@ -623,7 +609,6 @@ class DocumentationSection(backend.Section):
 class SaveSection(backend.Section):
     class Save(backend.Section):
         def on_render(self) -> None:
-            super().on_render()
             Terminal.print("$cya$bri< NEW SAVE FILE >$res", color=True)
             file = Terminal.input("Input a $yelname$res for this $magfile$res: ", color=True).strip()
             if not file.endswith(".json"): file = file+".json"
@@ -641,7 +626,6 @@ class SaveSection(backend.Section):
             backend.SectionManager.init_section(self.system, "Save")
 
     def on_render(self) -> None:
-        super().on_render()
         Terminal.print("---- {$cyaSAVE FILES$res} ----", color=True)
         Terminal.print()
         if self.system.player: Terminal.print("$blu1$res: Save", color=True)
@@ -697,8 +681,9 @@ class LoadingSection(backend.Section):
         self.interval: float = 0.05
         self.next_prog: float = time.monotonic() + self.interval
         self.symbol: Terminal.AnimatedString = Terminal.AnimatedString(["-","\\","|","/","-"])
-
         self.loading_text: str = "-" * 10
+
+        self.text = ""
     
     def on_update(self) -> None:
         self.frames += 1
@@ -709,15 +694,15 @@ class LoadingSection(backend.Section):
                 self.progress()
             if self.progression % 4 == 0:
                 self.symbol.next()
+            self.text = f"\r$yelBringing life to your gladiators... please wait. " \
+                f"$cyaLoading:$res " \
+                f"$gre$bri{self.progression}% " \
+                f"$blu$dim{self.symbol}$res " \
+                f"[{self.loading_text}]"
 
     def on_render(self) -> None:
-        super().on_render()
         Terminal.print(
-            f"\r$yelBringing life to your gladiators... please wait. "
-            f"$cyaLoading:$res "
-            f"$gre$bri{self.progression}% "
-            f"$blu$dim{self.symbol}$res "
-            f"[{self.loading_text}]", color=True
+            self.text, color=True
         )
 
     def progress(self) -> None:
@@ -733,7 +718,6 @@ class GameSection(backend.Section):
         rewards: Dict[str, Any]
         loss: bool = False
         def on_render(self) -> None:
-            super().on_render()
             Terminal.print(self.title, color=True)
             for reward, amount in self.rewards.items():
                 player = self.system.player.sys
@@ -827,7 +811,6 @@ class GameSection(backend.Section):
         self.enemy_attack: str = self.system.environment.enemy.generate_attack()
 
     def on_render(self) -> None:
-        super().on_render()
         Terminal.print("---- {$cya$briGLADIATORERNA$res} ----", color=True)
         Terminal.print("")
         self.print_enemy()
@@ -860,7 +843,7 @@ class GameSection(backend.Section):
                 player_log = Terminal.format(f"You tried using: $mag{solution.name}$res. It is broken.")
         else: player_log = "You did nothing."
         enemy_weapon = random.choices(enemy.equipped_weapons, list(abs(w.health) for w in enemy.equipped_weapons))[0]
-        if (max(enemy_weapon.health - 10, 0) / enemy_weapon.max_health) * self.system.difficulty.data.get("enemy_attack_chance", 0.85) > random.uniform(0, 1): # We'll actually make it less likely for it to hit when the weapon has low health.
+        if max((max(enemy_weapon.health - 10, 0) / enemy_weapon.max_health) * self.system.difficulty.data.get("enemy_attack_chance", 0.85), 0.15) > random.uniform(0, 1): # We'll actually make it less likely for it to hit when the weapon has low health.
             enemy_critical, enemy_damage = enemy_weapon.use(player)
             enemy_log = Terminal.format(f"Enemy attacked using $mag{enemy_weapon.name}$res, dealing $red{enemy_damage}$res damage" \
                         f"{" (critical)" if enemy_critical else ""}")
