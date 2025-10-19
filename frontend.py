@@ -23,15 +23,15 @@ class MenuSection(backend.Section): # We create a section for the menu
     def on_render(self) -> None: # On every render, we do...
         Terminal.print(f"Welcome to $cya$briGladiatorerna$res!", color=True)
         if not self.system.player:
-            Terminal.print("")
-            Terminal.print("$briBefore$res you $greStart$res, check that you have chosen your character in the $cyaSettings$res.", color=True)
-            Terminal.print(f"The $magShop$res and $cyaInventory$res will be unlocked once you've started the game and your character ", color=True)
-            Terminal.print("has been chosen. Once you have started, you can go back and buy new gear.", color=True)
-            Terminal.print("To do this, open the store. Then, you can go back into the battlefield, selecting $greStart$res.", color=True)
-        Terminal.print("")
+            Terminal.space()
+            Terminal.print("$briBefore$res you $greStart$res, check that you have chosen your character in the $cyaSettings$res."
+                           "\nThe $magShop$res and $cyaInventory$res will be unlocked once you've started the game and your character "
+                           "\nhas been chosen. Once you have started, you can go back and buy new gear."
+                           "\nTo do this, open the store. Then, you can go back into the battlefield, selecting $greStart$res.", color=True)
+        Terminal.space()
         Terminal.print(f"Current time is: $yel{datetime.datetime.now().strftime("%H:%M")}$res", color=True)
-        print("")
-        print("Where would you like to go?")
+        Terminal.space()
+        Terminal.print("Where would you like to go?")
         options = {
             # id, title, section
             "1": (Terminal.format("$greStart$res"), "Game"),
@@ -48,8 +48,10 @@ class MenuSection(backend.Section): # We create a section for the menu
             options["9"] = (Terminal.format("$cya$briInventory$res"), "Inventory")
             exit_id = "10"
         options[exit_id] = (Terminal.format("$redExit$res"), "Exit")
+        options_string = ""
         for k, v in options.items():
-            Terminal.print(f"$blu{k}$res: {v[0]}", color=True)
+            options_string += f"$blu{k}$res: {v[0]}\n"
+        Terminal.print(options_string[:-1], color=True)
         solution = options.get(Terminal.input("Select one $bluoption$res: ", color=True).lower().strip())
         if not solution: return
 
@@ -65,7 +67,7 @@ class MenuSection(backend.Section): # We create a section for the menu
 
 class SettingsSection(backend.Section): # Settings.
     def on_render(self) -> None:
-        print("Options:")
+        Terminal.print("Options:")
         options = {
             # id, title, current value
             "1": ("Difficulty", self.system.difficulty.name),
@@ -73,15 +75,17 @@ class SettingsSection(backend.Section): # Settings.
         if not self.system.player:
             options["2"] = ("Character", self.system.char_name)
         Terminal.print(f"$red0$res: Go back", color=True)
+        options_string = ""
         for k, v in options.items():
-            Terminal.print(f"$blu{k}$res: $yel{v[0]}$res [$mag{v[1]}$res]", color=True)
+            options_string += f"$blu{k}$res: $yel{v[0]}$res [$mag{v[1]}$res]\n"
+        Terminal.print(options_string[:-1], color=True)
         solution = Terminal.input("Select one $blusetting$res to $yelchange$res: ", color=True).lower().strip()
         if solution == "0": 
             backend.SectionManager.init_section(self.system, "Menu")
             return
         solution = options.get(solution)
         if not solution: return
-        Terminal.print("")
+        Terminal.space()
         match solution[0]:
             case "Difficulty":
                 Terminal.print("Difficulties:")
@@ -100,7 +104,7 @@ class SettingsSection(backend.Section): # Settings.
                     Terminal.print(f"$mag{name}$res - $blu{data.get("desc", "No description available.")}$res", color=True)
                 new_character = None
                 while not new_character:
-                    new_character = input("Select one character: ")
+                    new_character = Terminal.input("Select one character: ")
                     if not new_character in backend.CONFIG.characters: 
                         Terminal.print(f"$redInvalid$res. Try again.", color=True)
                         new_character = None
@@ -120,8 +124,10 @@ class ShopSection(backend.Section):
                 "2": (Terminal.format("$red$briNo$res"), "N")
             }
             Terminal.print(f"Are you sure you want to buy $mag$bri{item.name}$res?", color=True)
+            options_string = ""
             for k, v in options.items():
-                Terminal.print(f"$blu{k}$res: {v[0]}", color=True)
+                options_string += f"$blu{k}$res: {v[0]}\n"
+            Terminal.print(options_string[:-1], color=True)
             solution = options.get(Terminal.input("Select one $bluoption$res: ", color=True).lower().strip())
             if not solution: return
             if solution[1] == "Y":
@@ -176,18 +182,20 @@ class ShopSection(backend.Section):
             return
 
         self.render_title()
-        Terminal.print()
+        Terminal.space()
         self.render_points(int(self.system.player.sys.points))
         self.render_count(len(self.items))
-        Terminal.print()
+        Terminal.space()
         options = {
             # id, title, section
             "1": (Terminal.format("$redWeapons$res"), "Shop.Weapons"),
             "2": (Terminal.format("$greArmor$res"), "Shop.Armor")
         }
         Terminal.print("$red0$res: Go back", color=True)
+        options_string = ""
         for k, v in options.items():
-            Terminal.print(f"$blu{k}$res: {v[0]}", color=True)
+            options_string += f"$blu{k}$res: {v[0]}\n"
+        Terminal.print(options_string[:-1], color=True)
         solution = Terminal.input("Select one $bludirectory$res: ", color=True).lower().strip()
         if solution == "0": 
             backend.SectionManager.init_section(self.system, "Menu")
@@ -207,10 +215,12 @@ class ShopSection(backend.Section):
     
     def render_items(self, points: int, items: List[backend.System.ItemProtocol]) -> Dict[str, backend.System.ItemProtocol]:
         processed = {}
+        options_string = ""
         for i, item in enumerate(items):
             if item.owned or not item.minimal_level <= self.system.player.sys.level: continue
-            Terminal.print(f"$blu{i+1}$res: $mag{item.name}$res [{("$gre" if points >= item.cost else "$red") + "$bri"}{item.cost}p$res] - $blu{item.desc}$res", color=True)
+            options_string += f"$blu{i+1}$res: $mag{item.name}$res [{("$gre" if points >= item.cost else "$red") + "$bri"}{item.cost}p$res] - $blu{item.desc}$res\n"
             processed[str(i+1)] = item
+        Terminal.print(options_string[:-1], color=True)
         return processed
 
 class InventorySection(backend.Section):
@@ -223,9 +233,9 @@ class InventorySection(backend.Section):
 
         def on_render(self) -> None:
             self.inv.render_title()
-            Terminal.print()
+            Terminal.space()
             self.inv.render_count(len(self.items))
-            Terminal.print()
+            Terminal.space()
             Terminal.print(f"$red0$res: Go back", color=True)
             options = self.inv.render_items(self.items)
             solution = Terminal.input("Select one item you want to $bluchange$res: ", color=True).lower().strip()
@@ -252,17 +262,19 @@ class InventorySection(backend.Section):
             return
 
         self.render_title()
-        Terminal.print()
+        Terminal.space()
         self.render_count(len(self.system.player.sys.items))
-        Terminal.print()
+        Terminal.space()
         options = {
             # id, title, section
             "1": (Terminal.format("$redWeapons$res"), "Inventory.Weapons"),
             "2": (Terminal.format("$greArmor$res"), "Inventory.Armor")
         }
         Terminal.print("$red0$res: Go back", color=True)
+        options_string = ""
         for k, v in options.items():
-            Terminal.print(f"$blu{k}$res: {v[0]}", color=True)
+            options_string += f"$blu{k}$res: {v[0]}\n"
+        Terminal.print(options_string[:-1], color=True)
         solution = Terminal.input("Select one $bludirectory$res: ", color=True).lower().strip()
         if solution == "0": 
             backend.SectionManager.init_section(self.system, "Menu")
@@ -279,10 +291,12 @@ class InventorySection(backend.Section):
 
     def render_items(self, items: List[Tuple[str, backend.System.ItemProtocol]]) -> Dict[str, backend.System.ItemProtocol]:
         processed = {}
+        options_string = ""
         for i, (name, item) in enumerate(items):
             if not item.owned: continue
-            Terminal.print(f"$blu{i+1}$res: $mag{name}$res [{("$gre" if item.equipped else "$red") + "$bri"}{"Equipped" if item.equipped else "Unequipped"}$res] - $blu{item.desc}$res", color=True)
+            options_string += f"$blu{i+1}$res: $mag{name}$res [{("$gre" if item.equipped else "$red") + "$bri"}{"Equipped" if item.equipped else "Unequipped"}$res] - $blu{item.desc}$res\n"
             processed[str(i+1)] = item
+        Terminal.print(options_string[:-1], color=True)
         return processed
 
 class IntelSection(backend.Section):
@@ -318,7 +332,7 @@ class IntelSection(backend.Section):
         else: print_items(list(i() for i in ItemLibrary.items))
         
         # Stats
-        Terminal.print("")
+        Terminal.space()
         Terminal.print("Players:")
         if self.system.player:
             player = self.system.player.sys
@@ -336,9 +350,10 @@ class IntelSection(backend.Section):
                 "Critical Chance": f"{player.critical_chance}",
                 "Critical Factor": f"{player.critical_factor}"
             }
+            stats_string = ""
             for title, value in items.items():
-                Terminal.print(f"$yel{title}$res: $blu{value}$res", color=True)
-            Terminal.print("")
+                stats_string += f"$yel{title}$res: $blu{value}$res\n"
+            Terminal.print(stats_string, color=True)
         
         for name, data in backend.CONFIG.characters.items():
             if self.system.player and self.system.player.sys.name == name: continue
@@ -351,12 +366,12 @@ class IntelSection(backend.Section):
                 "Critical Chance": f"{data["critical_chance"]}",
                 "Critical Factor": f"{data["critical_factor"]}"
             }
+            stats_string = ""
             for title, value in items.items():
-                Terminal.print(f"$yel{title}$res: $blu{value}$res", color=True)
-            Terminal.print("")
-                
-
-        Terminal.print("")
+                stats_string += f"$yel{title}$res: $blu{value}$res\n"
+            Terminal.print(stats_string, color=True)
+            
+        Terminal.space()
         Terminal.print("$red0$res: Go back", color=True)
         solution = Terminal.input("Select one $bluoption$res: ", color=True).lower().strip()
         if solution == "0": 
@@ -378,8 +393,10 @@ class BlacksmithSection(backend.Section):
                 "2": (Terminal.format("$red$briNo$res"), "N")
             }
             Terminal.print(f"Are you sure you want to upgrade $mag$bri{item.name}$res?", color=True)
+            options_string = ""
             for k, v in options.items():
-                Terminal.print(f"$blu{k}$res: {v[0]}", color=True)
+                options_string += f"$blu{k}$res: {v[0]}\n"
+            Terminal.print(options_string[:-1], color=True)
             solution = options.get(Terminal.input("Select one $bluoption$res: ", color=True).lower().strip())
             if not solution: return
             if solution[1] == "Y":
@@ -399,10 +416,10 @@ class BlacksmithSection(backend.Section):
             super().on_render()
             self.blacksmith.render_title()
             points = int(self.system.player.sys.points)
-            Terminal.print("")
+            Terminal.space()
             self.blacksmith.render_points(points)
             self.blacksmith.render_count(len(self.items))
-            Terminal.print("")
+            Terminal.space()
             Terminal.print("$red0$res: Go back", color=True)
             options = self.blacksmith.render_items(points, self.items)
             solution = Terminal.input("Select one item you want to $bluupgrade$res: ", color=True).lower().strip()
@@ -435,18 +452,20 @@ class BlacksmithSection(backend.Section):
             return
 
         self.render_title()
-        Terminal.print("")
+        Terminal.space()
         self.render_points(int(self.system.player.sys.points))
         self.render_count(len(self.items))
-        Terminal.print("")
+        Terminal.space()
         options = {
             # id, title, section
             "1": (Terminal.format("$redWeapons$res"), "Blacksmith.Weapons"),
             "2": (Terminal.format("$greArmor$res"), "Blacksmith.Armor")
         }
         Terminal.print(f"$red0$res: Go back", color=True)
+        options_string = ""
         for k, v in options.items():
-            Terminal.print(f"$blu{k}$res: {v[0]}", color=True)
+            options_string += f"$blu{k}$res: {v[0]}\n"
+        Terminal.print(options_string[:-1], color=True)
         solution = Terminal.input("Select one $bludirectory$res: ", color=True).lower().strip()
         if solution == "0": 
             backend.SectionManager.init_section(self.system, "Menu")
@@ -466,10 +485,12 @@ class BlacksmithSection(backend.Section):
     
     def render_items(self, points: int, items: List[Tuple[str, backend.System.ItemProtocol]]) -> Dict[str, backend.System.ItemProtocol]:
         processed = {}
+        options_string = ""
         for i, (name, item) in enumerate(items):
             if not item.owned: continue
-            Terminal.print(f"$blu{i+1}$res: $mag{name}$res [{("$gre" if points >= item.upgrade_cost else "$red") + "$bri"}{item.upgrade_cost}p$res] - $blu{item.desc}$res", color=True)
+            options_string += f"$blu{i+1}$res: $mag{name}$res [{("$gre" if points >= item.upgrade_cost else "$red") + "$bri"}{item.upgrade_cost}p$res] - $blu{item.desc}$res\n"
             processed[str(i+1)] = item
+        Terminal.print(options_string[:-1], color=True)
         return processed
 
 class AboutSection(backend.Section):
@@ -501,7 +522,7 @@ class AboutSection(backend.Section):
     def on_render(self) -> None:
         for text in self.page:
             Terminal.print(text, color=True)
-        Terminal.print("")
+        Terminal.space()
         Terminal.print("$red0$res: Go back", color=True)
         Terminal.print("$blu1$res: Next page", color=True)
         solution = Terminal.input("Select one $bluoption$res: ", color=True).lower().strip()
@@ -593,7 +614,7 @@ class DocumentationSection(backend.Section):
     def on_render(self) -> None:
         for text in self.page:
             Terminal.print(text, color=True)
-        Terminal.print("")
+        Terminal.space()
         Terminal.print("$red0$res: Go back", color=True)
         Terminal.print("$blu1$res: Next page", color=True)
         solution = Terminal.input("Select one $bluoption$res: ", color=True).lower().strip()
@@ -627,11 +648,13 @@ class SaveSection(backend.Section):
 
     def on_render(self) -> None:
         Terminal.print("---- {$cyaSAVE FILES$res} ----", color=True)
-        Terminal.print()
+        Terminal.space()
         if self.system.player: Terminal.print("$blu1$res: Save", color=True)
         options = self.render_saves()
+        options_string = ""
         for k, v in options.items():
-            Terminal.print(f"$blu{k}$res: $yel{v[0]}$res", color=True)
+            options_string += f"$blu{k}$res: $yel{v[0]}$res\n"
+        Terminal.print(options_string[:-1], color=True)
         Terminal.print(f"$red0$res: Go back",color=True)
         solution = Terminal.input("Select one $bluoption$res: ", color=True).lower().strip()
         if solution == "0":
@@ -694,7 +717,8 @@ class LoadingSection(backend.Section):
                 self.progress()
             if self.progression % 4 == 0:
                 self.symbol.next()
-            self.text = f"\r$yelBringing life to your gladiators... please wait. " \
+            self.text = \
+                f"\r$yelBringing life to your gladiators... please wait. " \
                 f"$cyaLoading:$res " \
                 f"$gre$bri{self.progression}% " \
                 f"$blu$dim{self.symbol}$res " \
@@ -733,7 +757,7 @@ class GameSection(backend.Section):
                 if not self.loss:
                     Terminal.print(f"$yel{reward}$res $gre$bri+{amount}$res", color=True)
                 else:Terminal.print(f"$yel{reward}$res $red$bri-{abs(amount)}$res", color=True)
-            Terminal.print("")
+            Terminal.space()
             options = {
                 # id, title, code
                 "1": (Terminal.format("$gre$briYes$res"), "Y"),
@@ -810,19 +834,19 @@ class GameSection(backend.Section):
 
     def on_render(self) -> None:
         Terminal.print("---- {$cya$briGLADIATORERNA$res} ----", color=True)
-        Terminal.print("")
+        Terminal.space()
         self.print_enemy()
         Terminal.print(f"Round: $gre{self.system.environment.round}$res", color=True)
         if self.log:
-            Terminal.print()
+            Terminal.space()
             self.print_log()
-        Terminal.print()
+        Terminal.space()
         self.print_stats()
-        Terminal.print("")
+        Terminal.space()
         Terminal.print(f"$yel$bri{self.system.environment.next}$res", color=True)
-        Terminal.print("")
+        Terminal.space()
         Terminal.print(self.enemy_attack)
-        Terminal.print("")
+        Terminal.space()
         Terminal.print("What do you do?")
         options = self.render_items()
         Terminal.print("$red0$res: Go back", color=True)
@@ -892,9 +916,11 @@ class GameSection(backend.Section):
     
     def render_items(self) -> Dict[str, backend.System.ItemProtocol]:
         processed = {}
+        options_string = ""
         for i, item in enumerate(self.system.player.sys.equipped_weapons):
-            Terminal.print(f"$blu{i+1}$res: $mag{item.name}$res [{f"$gre{max(item.health, 0)}/{item.max_health}$res" if item.health >= 0 else f"$red{abs(item.health)}$res"}] - $blu{item.generate_attack()}$res", color=True)
+            options_string += f"$blu{i+1}$res: $mag{item.name}$res [{f"$gre{max(item.health, 0)}/{item.max_health}$res" if item.health >= 0 else f"$red{abs(item.health)}$res"}] - $blu{item.generate_attack()}$res\n"
             processed[str(i+1)] = item
+        Terminal.print(options_string[:-1], color=True)
         return processed
 
 Terminal.print("Loading... (New Objects)", end="\r")
