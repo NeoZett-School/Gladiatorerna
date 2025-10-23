@@ -75,7 +75,7 @@ class Module:
         input_text: Optional[str] = "",
         n: int = -1
     ) -> str:
-        Terminal.input(
+        return Terminal.input(
             *prompt, 
             sep=sep, 
             end=end, 

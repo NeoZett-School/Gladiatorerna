@@ -15,8 +15,6 @@ import re
 if not __name__ == "__main__":
     exit() # If this file was not run directly, we can simply exit like normal before anything get run.
 
-Terminal.init() # Initialize the terminal (including colorama)
-
 Terminal.print("Loading... (Creating Objects)", end="\r")
 
 class MenuSection(backend.Section): # We create a section for the menu
@@ -34,20 +32,20 @@ class MenuSection(backend.Section): # We create a section for the menu
         Terminal.print("Where would you like to go?")
         options = {
             # id, title, section
-            "1": (Terminal.format("$greStart$res"), "Game"),
-            "2": (Terminal.format("$cyaSaves$res"), "Save"),
-            "3": (Terminal.format("$bluAbout$res"), "About"),
-            "4": (Terminal.format("$yelDocumentation$res"), "Documentation"),
-            "5": (Terminal.format("$cyaSettings$res"), "Settings"),
-            "6": (Terminal.format("$yelIntel$res"), "Intel")
+            "1": ("$greStart$res", "Game"),
+            "2": ("$cyaSaves$res", "Save"),
+            "3": ("$bluAbout$res", "About"),
+            "4": ("$yelDocumentation$res", "Documentation"),
+            "5": ("$cyaSettings$res", "Settings"),
+            "6": ("$yelIntel$res", "Intel")
         }
         exit_id = "7"
         if self.system.player: # If the game has initialized, we can safely reveal the shop!
-            options["7"] = (Terminal.format("$magShop$res"), "Shop")
-            options["8"] = (Terminal.format("$bluBlacksmith$res"), "Blacksmith")
-            options["9"] = (Terminal.format("$cya$briInventory$res"), "Inventory")
+            options["7"] = ("$magShop$res", "Shop")
+            options["8"] = ("$bluBlacksmith$res", "Blacksmith")
+            options["9"] = ("$cya$briInventory$res", "Inventory")
             exit_id = "10"
-        options[exit_id] = (Terminal.format("$redExit$res"), "Exit")
+        options[exit_id] = ("$redExit$res", "Exit")
         options_string = ""
         for k, v in options.items():
             options_string += f"$blu{k}$res: {v[0]}\n"
@@ -120,8 +118,8 @@ class ShopSection(backend.Section):
             item = self.shop.to_buy
             options = {
                 # id, title, code
-                "1": (Terminal.format("$gre$briYes$res"), "Y"),
-                "2": (Terminal.format("$red$briNo$res"), "N")
+                "1": ("$gre$briYes$res", "Y"),
+                "2": ("$red$briNo$res", "N")
             }
             Terminal.print(f"Are you sure you want to buy $mag$bri{item.name}$res?", color=True)
             options_string = ""
@@ -188,8 +186,8 @@ class ShopSection(backend.Section):
         Terminal.space()
         options = {
             # id, title, section
-            "1": (Terminal.format("$redWeapons$res"), "Shop.Weapons"),
-            "2": (Terminal.format("$greArmor$res"), "Shop.Armor")
+            "1": ("$redWeapons$res", "Shop.Weapons"),
+            "2": ("$greArmor$res", "Shop.Armor")
         }
         Terminal.print("$red0$res: Go back", color=True)
         options_string = ""
@@ -267,8 +265,8 @@ class InventorySection(backend.Section):
         Terminal.space()
         options = {
             # id, title, section
-            "1": (Terminal.format("$redWeapons$res"), "Inventory.Weapons"),
-            "2": (Terminal.format("$greArmor$res"), "Inventory.Armor")
+            "1": ("$redWeapons$res", "Inventory.Weapons"),
+            "2": ("$greArmor$res", "Inventory.Armor")
         }
         Terminal.print("$red0$res: Go back", color=True)
         options_string = ""
@@ -389,8 +387,8 @@ class BlacksmithSection(backend.Section):
             item = self.blacksmith.to_upgrade
             options = {
                 # id, title, code
-                "1": (Terminal.format("$gre$briYes$res"), "Y"),
-                "2": (Terminal.format("$red$briNo$res"), "N")
+                "1": ("$gre$briYes$res", "Y"),
+                "2": ("$red$briNo$res", "N")
             }
             Terminal.print(f"Are you sure you want to upgrade $mag$bri{item.name}$res?", color=True)
             options_string = ""
@@ -458,8 +456,8 @@ class BlacksmithSection(backend.Section):
         Terminal.space()
         options = {
             # id, title, section
-            "1": (Terminal.format("$redWeapons$res"), "Blacksmith.Weapons"),
-            "2": (Terminal.format("$greArmor$res"), "Blacksmith.Armor")
+            "1": ("$redWeapons$res", "Blacksmith.Weapons"),
+            "2": ("$greArmor$res", "Blacksmith.Armor")
         }
         Terminal.print(f"$red0$res: Go back", color=True)
         options_string = ""
@@ -703,8 +701,8 @@ class LoadingSection(backend.Section):
         self.progression: int = 0
         self.interval: float = 0.05
         self.next_prog: float = time.monotonic() + self.interval
-        self.symbol: Terminal.AnimatedString = Terminal.AnimatedString(["-","\\","|","/","-"])
-        self.loading_bar: Terminal.ProgressBar = Terminal.ProgressBar("$gre$bri[has]$yel$dim[need]$res", "-", 10)
+        self.symbol = Terminal.AnimatedString(["-","\\","|","/","-"])
+        self.loading_bar = Terminal.ProgressBar("$gre$bri[has]$yel$dim[need]$res", "-", 10)
 
         self.text = ""
     
@@ -760,8 +758,8 @@ class GameSection(backend.Section):
             Terminal.space()
             options = {
                 # id, title, code
-                "1": (Terminal.format("$gre$briYes$res"), "Y"),
-                "2": (Terminal.format("$red$briNo$res"), "N")
+                "1": ("$gre$briYes$res", "Y"),
+                "2": ("$red$briNo$res", "N")
             }
             Terminal.print("Do you want to fight again? Otherwise return to menu.")
             for k, v in options.items():
@@ -859,18 +857,18 @@ class GameSection(backend.Section):
         solution = options.get(solution)
         if solution:
             player_critical, player_damage = solution.use(enemy)
-            player_log = Terminal.format(f"You attacked using $mag{solution.name}$res, dealing $red{player_damage}$res damage" \
-                         f"{" (critical)" if player_critical else ""}")
+            player_log = f"You attacked using $mag{solution.name}$res, dealing $red{player_damage}$res damage" \
+                         f"{" (critical)" if player_critical else ""}"
             if player_damage == 0: 
-                player_log = Terminal.format(f"You tried using: $mag{solution.name}$res. It is broken.")
+                player_log = f"You tried using: $mag{solution.name}$res. It is broken."
         else: player_log = "You did nothing."
         enemy_weapon = random.choices(enemy.equipped_weapons, list(max(abs(w.health), 1) for w in enemy.equipped_weapons))[0]
         if max((max(enemy_weapon.health - 10, 0) / enemy_weapon.max_health) * self.system.difficulty.data.get("enemy_attack_chance", 0.85), 0.15) > random.uniform(0, 1): # We'll actually make it less likely for it to hit when the weapon has low health.
             enemy_critical, enemy_damage = enemy_weapon.use(player)
-            enemy_log = Terminal.format(f"Enemy attacked using $mag{enemy_weapon.name}$res, dealing $red{enemy_damage}$res damage" \
-                        f"{" (critical)" if enemy_critical else ""}")
+            enemy_log = f"Enemy attacked using $mag{enemy_weapon.name}$res, dealing $red{enemy_damage}$res damage" \
+                        f"{" (critical)" if enemy_critical else ""}"
             if enemy_damage == 0: 
-                enemy_log = Terminal.format(f"Enemy tried using: $mag{enemy_weapon.name}$res. It is broken.")
+                enemy_log = f"Enemy tried using: $mag{enemy_weapon.name}$res. It is broken."
         else: enemy_log = "Enemy did nothing."
         self.log = [
             "[Remember that damage may be deflected by a amount]",
