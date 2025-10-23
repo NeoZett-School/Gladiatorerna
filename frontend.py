@@ -898,7 +898,7 @@ class GameSection(backend.Section):
     def print_log(self) -> None:
         Terminal.print("Log:")
         for text in self.log:
-            Terminal.print(f"{text}")
+            Terminal.print(f"{text}", color=True)
 
     def print_stats(self) -> None:
         player = self.system.player.sys
