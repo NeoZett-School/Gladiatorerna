@@ -135,8 +135,8 @@ class ItemLibrary:
 
     @classmethod
     def generate_weapon(cls, level: int) -> ItemProtocol:
-        return random.choice(cls.weapons[:min(level + 1, len(cls.weapons))])()
+        return random.choice(cls.weapons[:min(level, len(cls.weapons) - 1)])()
     
     @classmethod
     def generate_armor(cls, level: int) -> ItemProtocol:
-        return random.choice(cls.armor[:min(level + 1, len(cls.armor))])()
+        return random.choice(cls.armor[:min(level, len(cls.armor) - 1)])()
