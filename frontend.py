@@ -710,24 +710,26 @@ class LoadingSection(backend.Section):
         Terminal.clear()
     
     def on_update(self) -> None:
+        current_time = time.monotonic()
+        if current_time >= self.next_prog:
+            self.next_prog = current_time + self.interval
+            self.progress()
+        if self.progression % 4 == 0:
+            self.symbol.next()
         self.frames += 1
-        if self.frames % 10 == 0: # Performance!
-            current_time = time.monotonic()
-            if current_time >= self.next_prog:
-                self.next_prog = current_time + self.interval
-                self.progress()
-            if self.progression % 4 == 0:
-                self.symbol.next()
-            self.text = \
-                f"\r$yelBringing life to your gladiators... please wait. " \
-                f"$cyaLoading:$res " \
-                f"$gre$bri{self.progression}% " \
-                f"$blu$dim{self.symbol}$res " \
-                f"[{self.loading_bar.get_frame(self.loading_bar.calc_index(self.progression, 100))}]"
+        if self.frames % 3 == 0: # Performance!
+            self.text = self.generate_text()
             self.updated = False
+        
+    def generate_text(self) -> str:
+        return f"\r$yelBringing life to your gladiators... please wait. " \
+            f"$cyaLoading:$res " \
+            f"$gre$bri{self.progression}% " \
+            f"$blu$dim{self.symbol}$res " \
+            f"[{self.loading_bar.get_frame(self.loading_bar.calc_index(self.progression, 100))}]"
 
     def on_render(self) -> None:
-        if not self.updated:
+        if not self.updated and not self.text == self.generate_text(): # The text will only be checked if its not updated
             Terminal.print(
                 "\r"+self.text, end="", color=True
             )
