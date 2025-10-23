@@ -231,9 +231,11 @@ class Handler(Protocol):
         ...
 
 class System:
+    clear: bool
     active: bool
     handlers: List[Handler]
     def __init__(self) -> Self:
+        self.clear = True
         self.active = False
         self.handlers = []
     
@@ -248,7 +250,8 @@ class System:
             handler.on_update()
 
     def render(self) -> None:
-        Terminal.clear()
+        if self.clear:
+            Terminal.clear()
         for handler in self.handlers:
             handler.on_render()
 

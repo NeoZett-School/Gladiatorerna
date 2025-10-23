@@ -705,10 +705,13 @@ class LoadingSection(backend.Section):
         self.loading_bar = Terminal.ProgressBar("$gre$bri[has]$yel$dim[need]$res", "-", 10)
 
         self.text = ""
+        self.updated: bool = False
+        self.system.clear = False
+        Terminal.clear()
     
     def on_update(self) -> None:
         self.frames += 1
-        if self.frames % 5 == 0: # Performance!
+        if self.frames % 10 == 0: # Performance!
             current_time = time.monotonic()
             if current_time >= self.next_prog:
                 self.next_prog = current_time + self.interval
@@ -721,15 +724,19 @@ class LoadingSection(backend.Section):
                 f"$gre$bri{self.progression}% " \
                 f"$blu$dim{self.symbol}$res " \
                 f"[{self.loading_bar.get_frame(self.loading_bar.calc_index(self.progression, 100))}]"
+            self.updated = False
 
     def on_render(self) -> None:
-        Terminal.print(
-            self.text, color=True
-        )
+        if not self.updated:
+            Terminal.print(
+                "\r"+self.text, end="", color=True
+            )
+            self.updated = True
 
     def progress(self) -> None:
         self.progression += 1
         if self.progression > 100:
+            self.system.clear = True
             backend.SectionManager.init_section(self.system, "Game")
 
 class GameSection(backend.Section):

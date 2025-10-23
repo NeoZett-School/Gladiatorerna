@@ -194,6 +194,7 @@ class Handler(Protocol):
 
 class System:
     """The Gladiator game system."""
+    clear: bool
     active: bool
     handlers: List[Handler]
     def __init__(self) -> Self:
