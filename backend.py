@@ -203,11 +203,11 @@ class Enemy(System.Handler): # The full enemy implementation.
             i.equipped = True
         difficulty_addition = (1 if difficulty == Difficulty.Hard else 0)
         for _ in range(weapon_count):
-            item = ItemLibrary.generate_weapon(enemy.sys.level + difficulty_addition)
+            item = ItemLibrary.generate_weapon(weapon_count + difficulty_addition)
             item._data["upgrades"] = random.randint(0, max_weapon_grade + difficulty_addition)
             add_item(item)
         for _ in range(armor_count):
-            item = ItemLibrary.generate_armor(enemy.sys.level + difficulty_addition)
+            item = ItemLibrary.generate_armor(armor_count + difficulty_addition)
             item._data["upgrades"] = random.randint(0, max_armor_grade + difficulty_addition)
             add_item(item)
         return enemy
