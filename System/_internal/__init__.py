@@ -3,7 +3,6 @@
 from .core import Player, Enemy, ItemProtocol, Handler, System
 from .data import PlayerData, ItemData
 from .itemtypes import ItemType
-from .terminal import Terminal
 
 __all__ = (
     "Terminal",

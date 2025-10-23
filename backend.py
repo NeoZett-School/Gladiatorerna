@@ -1,6 +1,6 @@
 # What we can't see on screen
 
-from typing import Tuple, List, Dict, Optional, Any, Self, TypedDict
+from typing import Tuple, List, Dict, Optional, Any, Type, Self, TypedDict
 from enum import Enum, auto
 from names import generate_name
 from story import generate_story

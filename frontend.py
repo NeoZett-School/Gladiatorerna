@@ -1,5 +1,5 @@
 # What we can see on screen
-from System import Terminal
+import Terminal
 
 Terminal.print("Loading... (Bootup)", end="\r")
 

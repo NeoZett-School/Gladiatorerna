@@ -3,7 +3,7 @@
 from typing import Tuple, List, Optional, Self, Protocol, runtime_checkable
 from .data import PlayerData, ItemData
 from .itemtypes import ItemType
-from .terminal import Terminal
+import Terminal
 import random
 import time
 
