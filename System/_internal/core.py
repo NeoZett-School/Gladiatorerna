@@ -98,7 +98,7 @@ class Player:
             times = max(1, int((current_time - self._next_heal) // self.healing))
             self._data["health"] = min(self.health + times * (1 - self.fire_damage * 0.75), self.max_health)
             self._next_heal = current_time + self.healing
-            self._data["fire_damage"] = (self.fire_damage - (0.15 * times)) if self.fire_damage > 0 else 0
+            self._data["fire_damage"] = (self.fire_damage - (0.75 * times)) if self.fire_damage > 0 else 0
 
 class Enemy(Player):
     ...
